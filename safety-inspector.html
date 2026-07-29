@@ -116,9 +116,7 @@
   table.reftable th{background:var(--asphalt); color:var(--hazard); font-weight:600;}
   .scroll-x{overflow-x:auto;}
 
-  .contractor-row{display:flex; gap:8px; align-items:center; padding:9px 0; border-bottom:1px solid var(--line);}
-  .contractor-row span{flex:1; font-size:13px;}
-  .contractor-row button{width:auto; padding:5px 10px; font-size:11px;}
+  .empty{color:var(--ink-dim); font-size:13px; text-align:center; padding:20px 0;}
 
   .toast{
     position:fixed; bottom:20px; left:50%; transform:translateX(-50%); background:var(--panel);
@@ -142,7 +140,6 @@
   <button data-tab="camera" class="active">📷 تصوير</button>
   <button data-tab="chat">📝 المقال</button>
   <button data-tab="violations">⚠️ المخالفات</button>
-  <button data-tab="data">🗂️ البيانات</button>
   <button data-tab="export">📦 التصدير</button>
 </nav>
 
@@ -208,33 +205,6 @@
   </div>
 </section>
 
-<!-- DATA TAB -->
-<section id="tab-data" style="display:none;">
-  <div class="panel">
-    <h2>بيانات الزيارة الحالية</h2>
-    <div class="kv"><span>اسم الشركة (للختم على الصور)</span><span id="dCompanyView">—</span></div>
-    <label>اسم الشركة يظهر على ختم الصور</label>
-    <input id="companyName" type="text" placeholder="مثال: المكتب الشمالي — السلامة">
-  </div>
-
-  <div class="panel">
-    <h2>المقاولون المخزّنون</h2>
-    <div id="contractorList"></div>
-    <label>إضافة مقاول</label>
-    <div style="display:flex; gap:8px;">
-      <input id="newContractorName" type="text" placeholder="اسم المقاول">
-      <input id="newContractorNum" type="text" placeholder="رقم العقد" style="max-width:110px;">
-    </div>
-    <button class="btn small secondary" style="margin-top:8px;" id="addContractorBtn">إضافة مقاول</button>
-  </div>
-
-  <div class="panel">
-    <h2>الزيارات المحفوظة</h2>
-    <div id="savedVisits"></div>
-    <div class="empty" id="savedVisitsEmpty">لا توجد زيارات محفوظة</div>
-  </div>
-</section>
-
 <!-- EXPORT TAB -->
 <section id="tab-export" style="display:none;">
   <div class="panel">
@@ -261,9 +231,8 @@
   </div>
 
   <div class="panel">
-    <h2>حفظ الزيارة</h2>
-    <button class="btn secondary" id="saveVisitBtn">حفظ هذه الزيارة في السجل</button>
-    <button class="btn danger" style="margin-top:10px;" id="resetVisitBtn">تفريغ الزيارة الحالية والبدء من جديد</button>
+    <h2>إعادة تعيين</h2>
+    <button class="btn danger" id="resetVisitBtn">تفريغ الزيارة الحالية والبدء من جديد</button>
   </div>
 </section>
 
@@ -305,14 +274,11 @@ const DEFAULT_VIOLATIONS = [
 ];
 
 let state = {
-  companyName:"",
-  contractors:[],
   photos:[], // {id,dataUrl,tag,time,lat,lon,place}
   article:{ contractor:"", location:"", workType:"", workOrder:"", receiver:"", source:"", notesRaw:"", day:"", date:"", time:"" },
   chatStep:0,
   chatDone:false,
-  violations:[], // numbers
-  savedVisits:[]
+  violations:[] // numbers
 };
 
 const FIXED_TEAM = "م. يوسف راكان";
@@ -369,31 +335,6 @@ function parseNotes(raw){
   return result;
 }
 
-// ---------- Storage helpers ----------
-async function loadPersisted(){
-  try{
-    const c = await window.storage.get('contractors');
-    if(c) state.contractors = JSON.parse(c.value);
-  }catch(e){}
-  try{
-    const cn = await window.storage.get('companyName');
-    if(cn) state.companyName = cn.value;
-  }catch(e){}
-  try{
-    const v = await window.storage.get('savedVisits');
-    if(v) state.savedVisits = JSON.parse(v.value);
-  }catch(e){}
-}
-async function persistContractors(){
-  try{ await window.storage.set('contractors', JSON.stringify(state.contractors)); }catch(e){}
-}
-async function persistCompany(){
-  try{ await window.storage.set('companyName', state.companyName); }catch(e){}
-}
-async function persistVisits(){
-  try{ await window.storage.set('savedVisits', JSON.stringify(state.savedVisits)); }catch(e){}
-}
-
 // ---------- Tabs ----------
 document.getElementById('tabs').addEventListener('click', (e)=>{
   const btn = e.target.closest('button[data-tab]');
@@ -403,7 +344,6 @@ document.getElementById('tabs').addEventListener('click', (e)=>{
   document.querySelectorAll('main > section').forEach(s=>s.style.display='none');
   document.getElementById('tab-'+btn.dataset.tab).style.display='block';
   if(btn.dataset.tab==='violations') renderRefTable();
-  if(btn.dataset.tab==='data') renderDataTab();
   if(btn.dataset.tab==='export') renderExportTab();
 });
 
@@ -456,9 +396,12 @@ document.getElementById('shutterBtn').addEventListener('click', ()=>{
     ctx.restore();
   }
 
-  // time/location watermark - bottom right, plain text (no box)
+  // time/date + coordinates + location watermark - bottom right, plain text (no box)
   const now = new Date();
-  const timeStr = formatTime24(now);
+  const timeSec = `${formatTime24(now)}:${String(now.getSeconds()).padStart(2,'0')}`;
+  const dateYMD = `${now.getFullYear()}/${String(now.getMonth()+1).padStart(2,'0')}/${String(now.getDate()).padStart(2,'0')}`;
+  const timeDateStr = `${timeSec} ${dateYMD}`;
+  const coordStr = currentPos ? `${currentPos.lat.toFixed(8)}N ${currentPos.lon.toFixed(8)}E` : '';
   const placeStr = currentPos?.place || 'الموقع غير متوفر';
 
   const margin = Math.round(canvas.width*0.035);
@@ -477,13 +420,15 @@ document.getElementById('shutterBtn').addEventListener('click', ()=>{
 
   ctx.textAlign='right';
   const yPlace = canvas.height - margin;
-  const yTime = yPlace - lineGap;
+  const yCoord = yPlace - lineGap;
+  const yTime = yCoord - lineGap;
   outlinedText(placeStr, canvas.width-margin, yPlace, fontSize2);
-  outlinedText(timeStr, canvas.width-margin, yTime, fontSize1);
+  if(coordStr) outlinedText(coordStr, canvas.width-margin, yCoord, fontSize2);
+  outlinedText(timeDateStr, canvas.width-margin, yTime, fontSize1);
 
   const dataUrl = canvas.toDataURL('image/jpeg', 0.95);
   const tag = document.getElementById('photoTag').value;
-  state.photos.push({id:Date.now()+Math.random(), dataUrl, tag, time:timeStr, lat:currentPos?.lat, lon:currentPos?.lon, place:placeStr});
+  state.photos.push({id:Date.now()+Math.random(), dataUrl, tag, time:timeSec, lat:currentPos?.lat, lon:currentPos?.lon, place:placeStr});
   renderThumbs();
   toast('تم حفظ الصورة');
 });
@@ -635,47 +580,6 @@ document.getElementById('addViolBtn').addEventListener('click', ()=>{
 });
 renderChosenViolations();
 
-// ---------- Data tab ----------
-function renderDataTab(){
-  document.getElementById('companyName').value = state.companyName;
-  document.getElementById('dCompanyView').textContent = state.companyName || '—';
-  renderContractorList();
-  renderSavedVisits();
-}
-document.getElementById('companyName').addEventListener('change', e=>{
-  state.companyName = e.target.value; persistCompany();
-});
-function renderContractorList(){
-  const wrap = document.getElementById('contractorList');
-  if(!state.contractors.length){ wrap.innerHTML = '<div class="empty">لا يوجد مقاولون مخزّنون بعد</div>'; return; }
-  wrap.innerHTML = state.contractors.map((c,i)=>`
-    <div class="contractor-row">
-      <span>${c.name} <span class="pill mono">${c.num||'—'}</span></span>
-      <button class="btn danger small" data-i="${i}">حذف</button>
-    </div>`).join('');
-  wrap.querySelectorAll('button').forEach(b=>b.addEventListener('click', e=>{
-    state.contractors.splice(parseInt(e.target.dataset.i),1);
-    persistContractors(); renderContractorList();
-  }));
-}
-document.getElementById('addContractorBtn').addEventListener('click', ()=>{
-  const name = document.getElementById('newContractorName').value.trim();
-  const num = document.getElementById('newContractorNum').value.trim();
-  if(!name) return;
-  state.contractors.push({name, num});
-  document.getElementById('newContractorName').value='';
-  document.getElementById('newContractorNum').value='';
-  persistContractors(); renderContractorList();
-});
-function renderSavedVisits(){
-  const wrap = document.getElementById('savedVisits');
-  const empty = document.getElementById('savedVisitsEmpty');
-  empty.style.display = state.savedVisits.length ? 'none':'block';
-  wrap.innerHTML = state.savedVisits.slice().reverse().map(v=>`
-    <div class="kv"><span>${v.article.contractor||'—'} · ${v.article.date||''}</span><span>${v.photos} صور / ${v.violations} مخالفات</span></div>
-  `).join('');
-}
-
 // ---------- Export tab ----------
 function renderExportTab(){
   document.getElementById('expPhotoCount').textContent = state.photos.length;
@@ -780,13 +684,6 @@ ${violLines || 'لا يوجد'}
   toast('تم تنزيل حزمة البيانات');
 });
 
-document.getElementById('saveVisitBtn').addEventListener('click', ()=>{
-  if(!state.chatDone){ toast('أكمل المقال أولاً'); return; }
-  state.savedVisits.push({article:{...state.article}, photos:state.photos.length, violations:state.violations.length, savedAt:Date.now()});
-  persistVisits();
-  toast('تم حفظ الزيارة في السجل');
-  renderSavedVisits();
-});
 document.getElementById('resetVisitBtn').addEventListener('click', ()=>{
   if(!confirm('هل تريد تفريغ بيانات الزيارة الحالية؟')) return;
   state.photos=[]; state.violations=[];
@@ -801,11 +698,6 @@ function toast(msg){
   document.body.appendChild(t);
   setTimeout(()=>t.remove(), 2200);
 }
-
-// ---------- Init ----------
-loadPersisted().then(()=>{
-  renderContractorList();
-});
 </script>
 </body>
 </html>
