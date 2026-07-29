@@ -424,9 +424,12 @@ async function initCamera(){
     currentPos = {lat:pos.coords.latitude, lon:pos.coords.longitude};
     document.getElementById('camHint').textContent = 'الموقع محدد — جاهز للتصوير';
     try{
-      const r = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${currentPos.lat}&lon=${currentPos.lon}&accept-language=ar`);
+      const r = await fetch(`https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${currentPos.lat}&lon=${currentPos.lon}&accept-language=ar&zoom=16`);
       const j = await r.json();
-      currentPos.place = j.display_name ? j.display_name.split(',').slice(0,3).join('،') : '';
+      const addr = j.address || {};
+      const district = addr.suburb || addr.neighbourhood || addr.quarter || addr.city_district || '';
+      const city = addr.city || addr.town || addr.municipality || addr.county || '';
+      currentPos.place = [district, city].filter(Boolean).join('، ');
     }catch(e){ currentPos.place=''; }
   }, ()=>{
     document.getElementById('camHint').textContent = 'تعذر تحديد الموقع — سيتم التصوير بدون إحداثيات';
@@ -453,31 +456,30 @@ document.getElementById('shutterBtn').addEventListener('click', ()=>{
     ctx.restore();
   }
 
-  // time/location watermark - bottom right, compact box
+  // time/location watermark - bottom right, plain text (no box)
   const now = new Date();
   const timeStr = formatTime24(now);
-  const coordStr = currentPos ? `${currentPos.lat.toFixed(5)}, ${currentPos.lon.toFixed(5)}` : 'الموقع غير متوفر';
-  const placeStr = currentPos?.place || '';
+  const placeStr = currentPos?.place || 'الموقع غير متوفر';
 
-  const lineH = Math.round(canvas.width*0.045);
-  const boxPad = Math.round(canvas.width*0.02);
-  const fontSize1 = Math.round(canvas.width*0.032);
-  const fontSize2 = Math.round(canvas.width*0.028);
-  const boxW = Math.round(canvas.width*0.62);
-  const boxH = lineH*2 + boxPad*2;
-  const margin = Math.round(canvas.width*0.03);
-  const boxX = canvas.width - boxW - margin;
-  const boxY = canvas.height - boxH - margin;
+  const margin = Math.round(canvas.width*0.035);
+  const fontSize1 = Math.round(canvas.width*0.038);
+  const fontSize2 = Math.round(canvas.width*0.032);
+  const lineGap = Math.round(canvas.width*0.045);
 
-  ctx.fillStyle = 'rgba(0,0,0,0.55)';
-  ctx.fillRect(boxX, boxY, boxW, boxH);
+  function outlinedText(text, x, y, size){
+    ctx.font = `bold ${size}px sans-serif`;
+    ctx.lineWidth = Math.max(2, Math.round(size*0.12));
+    ctx.strokeStyle = 'rgba(0,0,0,0.85)';
+    ctx.strokeText(text, x, y);
+    ctx.fillStyle = '#ffffff';
+    ctx.fillText(text, x, y);
+  }
 
   ctx.textAlign='right';
-  ctx.fillStyle = '#ffffff';
-  ctx.font = `${fontSize1}px sans-serif`;
-  ctx.fillText(timeStr, boxX+boxW-10, boxY+boxPad+fontSize1);
-  ctx.font = `${fontSize2}px sans-serif`;
-  ctx.fillText(placeStr ? `${coordStr} — ${placeStr}` : coordStr, boxX+boxW-10, boxY+boxPad+fontSize1+lineH*0.9);
+  const yPlace = canvas.height - margin;
+  const yTime = yPlace - lineGap;
+  outlinedText(placeStr, canvas.width-margin, yPlace, fontSize2);
+  outlinedText(timeStr, canvas.width-margin, yTime, fontSize1);
 
   const dataUrl = canvas.toDataURL('image/jpeg', 0.95);
   const tag = document.getElementById('photoTag').value;
@@ -768,10 +770,8 @@ ${a.notesRaw}
 
 المخالفات المختارة (${state.violations.length}):
 ${violLines || 'لا يوجد'}
-
-عدد الصور المرفقة: ${state.photos.length}
 ---
-الصق هذا النص في محادثة عادية مع Claude لتوليد ملف الوورد النهائي.`;
+الصق هذا النص في محادثة عادية مع Claude لتوليد ملف الوورد النهائي، وأرفق الصور بشكل منفصل عند الحاجة.`;
   const blob = new Blob([text], {type:'text/plain;charset=utf-8'});
   const url = URL.createObjectURL(blob);
   const link = document.createElement('a');
