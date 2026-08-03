@@ -158,9 +158,9 @@
     <label style="margin-top:14px;">تصنيف الصورة التالية</label>
     <select id="photoTag">
       <option value="site">سيارة/موقع عام</option>
-      <option value="doc">مستند</option>
       <option value="violation">ملاحظة/مخالفة</option>
       <option value="checklist">قائمة الفحص</option>
+      <option value="workshop">ورشة توعوية</option>
     </select>
     <div class="thumbgrid" id="thumbgrid"></div>
     <div class="empty" id="thumbEmpty">لا توجد صور بعد لهذه الزيارة</div>
@@ -219,6 +219,7 @@
     <button class="btn" id="pdfAll">تحميل PDF — كل صور الزيارة</button>
     <button class="btn secondary" style="margin-top:10px;" id="pdfViolations">تحميل PDF — الملاحظات فقط</button>
     <button class="btn secondary" style="margin-top:10px;" id="pdfChecklist">تحميل PDF — قائمة الفحص</button>
+    <button class="btn secondary" style="margin-top:10px;" id="pdfWorkshop">تحميل PDF — ورشة توعوية</button>
   </div>
 
   <div class="panel">
@@ -275,13 +276,12 @@ const DEFAULT_VIOLATIONS = [
 
 let state = {
   photos:[], // {id,dataUrl,tag,time,lat,lon,place}
-  article:{ contractor:"", location:"", workType:"", workOrder:"", receiver:"", source:"", notesRaw:"", day:"", date:"", time:"" },
+  article:{ contractor:"", location:"", workType:"", workOrder:"", receiver:"", source:"", executor:"", notesRaw:"", day:"", date:"", time:"" },
   chatStep:0,
   chatDone:false,
   violations:[] // numbers
 };
 
-const FIXED_TEAM = "م. يوسف راكان";
 const ARABIC_DAYS = ["الأحد","الاثنين","الثلاثاء","الأربعاء","الخميس","الجمعة","السبت"];
 function formatTime24(d){
   const h = String(d.getHours()).padStart(2,'0');
@@ -301,6 +301,7 @@ const chatFlow = [
   {key:"workOrder", q:"رقم أمر العمل؟"},
   {key:"receiver", q:"اسم المستلم؟"},
   {key:"source", q:"اسم المصدر؟"},
+  {key:"executor", q:"اسم منفذ الزيارة؟"},
   {key:"notesRaw", q:"أي ملاحظات على الزيارة؟ احكيها لي عادي بدون ترقيم (أو اكتب \"لا يوجد\" إن ما فيه ملاحظات). لو تم إيقاف العمل، اذكر ذلك أول كلامك."},
 ];
 
@@ -446,9 +447,9 @@ function renderThumbs(){
       <button class="del" data-id="${p.id}">×</button>
       <select data-id="${p.id}">
         <option value="site" ${p.tag==='site'?'selected':''}>موقع</option>
-        <option value="doc" ${p.tag==='doc'?'selected':''}>مستند</option>
         <option value="violation" ${p.tag==='violation'?'selected':''}>ملاحظة</option>
         <option value="checklist" ${p.tag==='checklist'?'selected':''}>فحص</option>
+        <option value="workshop" ${p.tag==='workshop'?'selected':''}>ورشة توعوية</option>
       </select>`;
     grid.appendChild(div);
   });
@@ -474,7 +475,7 @@ function startChat(){
   document.getElementById('chatlog').innerHTML='';
   state.chatStep = 0;
   state.chatDone = false;
-  state.article = {contractor:"",location:"",workType:"",workOrder:"",receiver:"",source:"",notesRaw:"",day:"",date:"",time:""};
+  state.article = {contractor:"",location:"",workType:"",workOrder:"",receiver:"",source:"",executor:"",notesRaw:"",day:"",date:"",time:""};
   document.getElementById('articlePreviewPanel').style.display='none';
   chatBubble('يلا نبدأ تجهيز المقال. '+chatFlow[0].q, 'bot');
 }
@@ -538,7 +539,7 @@ function renderArticle(){
 رقم العمل :- ${a.workOrder}
 اسم المستلم :- ${a.receiver}
 اسم المصدر:- ${a.source}
-فريق الزيارة :- ${FIXED_TEAM}
+فريق الزيارة :- ${a.executor}
 🔴 ملاحظات :-
 ${redSection}
 🟢 الملاحظات:-
@@ -644,11 +645,13 @@ function pdfFileName(kind){
   if(kind==='all') return `${wo}.pdf`;
   if(kind==='violation') return `ملاحظات ${contractor} ${wo}.pdf`;
   if(kind==='checklist') return `قائمة فحص ${contractor} ${wo}.pdf`;
+  if(kind==='workshop') return `ورشة توعوية ${contractor} ${wo}.pdf`;
   return `${wo}.pdf`;
 }
-document.getElementById('pdfAll').addEventListener('click', ()=> buildPdf(state.photos, pdfFileName('all')));
+document.getElementById('pdfAll').addEventListener('click', ()=> buildPdf(state.photos.filter(p=>p.tag!=='workshop'), pdfFileName('all')));
 document.getElementById('pdfViolations').addEventListener('click', ()=> buildPdf(state.photos.filter(p=>p.tag==='violation'), pdfFileName('violation')));
 document.getElementById('pdfChecklist').addEventListener('click', ()=> buildPdf(state.photos.filter(p=>p.tag==='checklist'), pdfFileName('checklist')));
+document.getElementById('pdfWorkshop').addEventListener('click', ()=> buildPdf(state.photos.filter(p=>p.tag==='workshop'), pdfFileName('workshop')));
 
 document.getElementById('exportPackage').addEventListener('click', ()=>{
   const a = state.article;
@@ -668,6 +671,7 @@ document.getElementById('exportPackage').addEventListener('click', ()=>{
 رقم العمل: ${a.workOrder}
 المستلم: ${a.receiver}
 المصدر: ${a.source}
+منفذ الزيارة: ${a.executor}
 
 نص الملاحظات كما أُدخل:
 ${a.notesRaw}
