@@ -1,6 +1,6 @@
 {
-  "name": "مفتش الميدان",
-  "short_name": "مفتش الميدان",
+  "name": "Safety Engineer",
+  "short_name": "Safety Engineer",
   "description": "توثيق زيارات السلامة الميدانية وتجهيز المحاضر",
   "start_url": "./index.html",
   "scope": "./",
