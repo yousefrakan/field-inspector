@@ -83,7 +83,7 @@
   button.btn:disabled{opacity:.4; cursor:not-allowed;}
 
   .camwrap{position:relative; border-radius:10px; overflow:hidden; background:#000; aspect-ratio:3/4;}
-  video, canvas.captureCanvas{width:100%; height:100%; object-fit:cover; display:block;}
+  video, canvas.captureCanvas{width:100%; height:100%; object-fit:contain; display:block;}
   .camwrap .overlay-hint{
     position:absolute; top:10px; left:10px; right:10px; background:rgba(0,0,0,.6);
     padding:8px 10px; border-radius:6px; font-size:12px; color:var(--ink); text-align:center;
@@ -98,16 +98,24 @@
   .thumb{position:relative; border-radius:10px; overflow:hidden; border:1px solid var(--line); background:#000;}
   .thumb img{width:100%; height:220px; object-fit:cover; display:block; cursor:pointer;}
   .thumb .thumbBar{
-    display:flex; justify-content:space-between; align-items:center; gap:8px;
+    display:flex; flex-wrap:wrap; justify-content:flex-start; align-items:center; gap:6px;
     background:var(--asphalt-2); padding:8px 10px;
   }
   .thumb select{
-    flex:1; font-size:12.5px; padding:6px 8px; border-radius:6px;
+    flex:1 1 100%; font-size:12.5px; padding:6px 8px; border-radius:6px;
     background:var(--asphalt); border:1px solid var(--line); color:var(--hazard);
   }
   .thumb .del{
     width:auto; padding:6px 12px; background:var(--danger);
     color:#fff; border:none; border-radius:6px; font-size:12px; cursor:pointer;
+  }
+  .thumb .dl{
+    width:auto; padding:6px 12px; background:var(--steel);
+    color:#fff; border:none; border-radius:6px; font-size:12px; cursor:pointer;
+  }
+  .thumb .moveBtn{
+    width:32px; padding:6px 0; background:var(--panel); border:1px solid var(--line);
+    color:var(--ink); border-radius:6px; font-size:12px; cursor:pointer;
   }
   .lightbox{
     position:fixed; inset:0; background:rgba(0,0,0,.92); z-index:100;
@@ -209,7 +217,8 @@
 
   <div class="panel" id="articlePreviewPanel" style="display:none;">
     <h2>المقال الجاهز</h2>
-    <div class="mono" id="articleText" style="white-space:pre-wrap; font-size:12.5px; background:var(--asphalt); padding:12px; border-radius:8px; border:1px solid var(--line);"></div>
+    <div class="sub" style="color:var(--ink-dim); font-size:12px; margin-bottom:8px;">تقدر تعدّل النص يدويًا قبل النسخ.</div>
+    <textarea id="articleText" class="mono" style="width:100%; min-height:340px; white-space:pre-wrap; font-size:12.5px; background:var(--asphalt); padding:12px; border-radius:8px; border:1px solid var(--line); color:var(--ink); resize:vertical;"></textarea>
     <button class="btn secondary" style="margin-top:10px;" id="copyArticle">نسخ نص المقال</button>
   </div>
 </section>
@@ -389,7 +398,7 @@ async function dbClear(){
 const CURRENT_ID_KEY = 'fieldInspectorCurrentId';
 
 function blankArticle(){
-  return { contractor:"", location:"", workType:"", workOrder:"", receiver:"", source:"", executor:"", notesRaw:"", permitNum:"", day:"", date:"", time:"" };
+  return { contractor:"", location:"", workType:"", workCategory:"", office:"", workOrder:"", receiver:"", source:"", executor:"", notesRaw:"", permitNum:"", workshopDone:"", day:"", date:"", time:"" };
 }
 
 let state = {
@@ -423,7 +432,7 @@ function snapshotVisit(){
     violations: [...state.violations],
     chatStep: state.chatStep,
     chatDone: state.chatDone,
-    articleText: (document.getElementById('articleText')?.textContent) || ''
+    articleText: (document.getElementById('articleText')?.value) || ''
   };
 }
 function loadVisitIntoState(v){
@@ -434,6 +443,7 @@ function loadVisitIntoState(v){
   state.violations = v.violations || [];
   state.chatStep = v.chatStep || 0;
   state.chatDone = v.chatDone || false;
+  state.savedArticleText = v.articleText || '';
 }
 async function startNewVisit(){
   state.id = 'v' + Date.now();
@@ -463,12 +473,15 @@ const chatFlow = [
   {key:"contractor", q:"وش اسم المقاول؟"},
   {key:"location", q:"الموقع (الحي)؟"},
   {key:"workType", q:"نوع العمل المنفذ؟"},
+  {key:"workCategory", q:"العمل طوارئ ولا إنشاءات؟", options:["طوارئ","إنشاءات"]},
+  {key:"office", q:"المكتب: شمال ولا خريص؟", options:["شمال","خريص"], skipIf:(a)=> a.workCategory==="إنشاءات"},
   {key:"workOrder", q:"رقم أمر العمل؟"},
   {key:"receiver", q:"اسم المستلم؟"},
   {key:"source", q:"اسم المصدر؟"},
   {key:"executor", q:"اسم منفذ الزيارة؟"},
   {key:"notesRaw", q:"أي ملاحظات على الزيارة؟ احكيها لي عادي بدون ترقيم (أو اكتب \"لا يوجد\" إن ما فيه ملاحظات). لو تم إيقاف العمل، اذكر ذلك أول كلامك."},
   {key:"permitNum", q:"رقم التصريح؟"},
+  {key:"workshopDone", q:"هل تم عمل ورشة توعوية؟", options:["نعم","لا"]},
 ];
 
 // Splits free-form notes text into bullet points, detects stop-work and (تم التعديل) tags
@@ -522,7 +535,7 @@ const logoImg = new Image();
 logoImg.src = LOGO_SRC;
 async function initCamera(){
   try{
-    stream = await navigator.mediaDevices.getUserMedia({video:{facingMode:'environment', width:{ideal:2560}, height:{ideal:1440}}, audio:false});
+    stream = await navigator.mediaDevices.getUserMedia({video:{facingMode:'environment', width:{ideal:3840}, height:{ideal:2160}}, audio:false});
     document.getElementById('video').srcObject = stream;
     document.getElementById('camHint').textContent = 'جاري تحديد الموقع...';
   }catch(err){
@@ -545,26 +558,47 @@ async function initCamera(){
 }
 initCamera();
 
+// Track device orientation angle for watermark rotation
+let deviceAngle = 0;
+function updateAngle(){
+  const a = (screen.orientation && typeof screen.orientation.angle === 'number') ? screen.orientation.angle : (window.orientation || 0);
+  deviceAngle = ((a % 360) + 360) % 360;
+}
+updateAngle();
+window.addEventListener('orientationchange', ()=> setTimeout(updateAngle, 100));
+if(screen.orientation) screen.orientation.addEventListener('change', updateAngle);
+
+// Shutter sound (WebAudio click) so user knows a photo was taken
+let _audioCtx = null;
+function playShutter(){
+  try{
+    _audioCtx = _audioCtx || new (window.AudioContext||window.webkitAudioContext)();
+    const ctx = _audioCtx;
+    if(ctx.state === 'suspended') ctx.resume();
+    const o = ctx.createOscillator();
+    const g = ctx.createGain();
+    o.type = 'square';
+    o.frequency.setValueAtTime(1200, ctx.currentTime);
+    o.frequency.exponentialRampToValueAtTime(400, ctx.currentTime+0.08);
+    g.gain.setValueAtTime(0.25, ctx.currentTime);
+    g.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime+0.12);
+    o.connect(g); g.connect(ctx.destination);
+    o.start(); o.stop(ctx.currentTime+0.12);
+  }catch(e){}
+}
+
 document.getElementById('shutterBtn').addEventListener('click', ()=>{
   const video = document.getElementById('video');
   const canvas = document.getElementById('captureCanvas');
-  canvas.width = video.videoWidth || 720;
-  canvas.height = video.videoHeight || 960;
+  // native sensor dimensions — no stretching, keeps true aspect ratio
+  canvas.width = video.videoWidth || 1280;
+  canvas.height = video.videoHeight || 720;
   const ctx = canvas.getContext('2d');
   ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
 
-  // logo watermark - top right, small, semi-transparent
-  if(logoImg.complete && logoImg.naturalWidth){
-    const logoW = Math.round(canvas.width*0.16);
-    const logoH = Math.round(logoW * (logoImg.naturalHeight/logoImg.naturalWidth));
-    const margin = Math.round(canvas.width*0.03);
-    ctx.save();
-    ctx.globalAlpha = 0.5;
-    ctx.drawImage(logoImg, canvas.width-logoW-margin, margin, logoW, logoH);
-    ctx.restore();
-  }
+  playShutter();
 
-  // time/date + coordinates + location watermark - bottom right, plain text (no box)
+  const W = canvas.width, H = canvas.height;
   const now = new Date();
   const timeSec = `${formatTime24(now)}:${String(now.getSeconds()).padStart(2,'0')}`;
   const dateYMD = `${now.getFullYear()}/${String(now.getMonth()+1).padStart(2,'0')}/${String(now.getDate()).padStart(2,'0')}`;
@@ -572,29 +606,54 @@ document.getElementById('shutterBtn').addEventListener('click', ()=>{
   const coordStr = currentPos ? `${currentPos.lat.toFixed(8)}N ${currentPos.lon.toFixed(8)}E` : '';
   const placeStr = currentPos?.place || 'الموقع غير متوفر';
 
-  const margin = Math.round(canvas.width*0.035);
-  const fontSize1 = Math.round(canvas.width*0.038);
-  const fontSize2 = Math.round(canvas.width*0.032);
-  const lineGap = Math.round(canvas.width*0.045);
+  // Reference size for scaling text/logo, based on the shorter side so it looks right in any orientation
+  const ref = Math.min(W, H);
+  const logoW = Math.round(ref*0.20);
+  const logoH = logoImg.naturalWidth ? Math.round(logoW * (logoImg.naturalHeight/logoImg.naturalWidth)) : Math.round(logoW*0.4);
+  const fontSize1 = Math.round(ref*0.05);
+  const fontSize2 = Math.round(ref*0.042);
+  const lineGap = Math.round(ref*0.06);
+  const pad = Math.round(ref*0.02);
 
-  function outlinedText(text, x, y, size){
+  function outlinedText(text, x, y, size, align){
+    ctx.textAlign = align || 'right';
     ctx.font = `bold ${size}px sans-serif`;
     ctx.lineWidth = Math.max(2, Math.round(size*0.12));
     ctx.strokeStyle = 'rgba(0,0,0,0.85)';
-    ctx.strokeText(text, x, y);
     ctx.fillStyle = '#ffffff';
+    ctx.strokeText(text, x, y);
     ctx.fillText(text, x, y);
   }
 
-  ctx.textAlign='right';
-  const yPlace = canvas.height - margin;
+  // Draw overlays inside a rotated coordinate system so they align with how the phone was held.
+  // We rotate around the canvas centre by the device angle, then draw as if in that orientation.
+  ctx.save();
+  ctx.translate(W/2, H/2);
+  ctx.rotate(deviceAngle * Math.PI/180);
+  // After rotating, the visual width/height swap for 90/270
+  let vw = W, vh = H;
+  if(deviceAngle === 90 || deviceAngle === 270){ vw = H; vh = W; }
+  // Work in a top-left origin of the rotated frame
+  ctx.translate(-vw/2, -vh/2);
+
+  // logo flush to top-right corner (no margin)
+  if(logoImg.complete && logoImg.naturalWidth){
+    ctx.save();
+    ctx.globalAlpha = 0.5;
+    ctx.drawImage(logoImg, vw-logoW, 0, logoW, logoH);
+    ctx.restore();
+  }
+
+  // time/coord/place bottom-right
+  const yPlace = vh - pad;
   const yCoord = yPlace - lineGap;
   const yTime = yCoord - lineGap;
-  outlinedText(placeStr, canvas.width-margin, yPlace, fontSize2);
-  if(coordStr) outlinedText(coordStr, canvas.width-margin, yCoord, fontSize2);
-  outlinedText(timeDateStr, canvas.width-margin, yTime, fontSize1);
+  outlinedText(placeStr, vw-pad, yPlace, fontSize2, 'right');
+  if(coordStr) outlinedText(coordStr, vw-pad, yCoord, fontSize2, 'right');
+  outlinedText(timeDateStr, vw-pad, yTime, fontSize1, 'right');
+  ctx.restore();
 
-  const dataUrl = canvas.toDataURL('image/jpeg', 0.95);
+  const dataUrl = canvas.toDataURL('image/jpeg', 0.92);
   const tag = document.getElementById('photoTag').value;
   state.photos.push({id:Date.now()+Math.random(), dataUrl, tag, time:timeSec, lat:currentPos?.lat, lon:currentPos?.lon, place:placeStr});
   renderThumbs();
@@ -607,8 +666,7 @@ function renderThumbs(){
   const empty = document.getElementById('thumbEmpty');
   grid.innerHTML='';
   empty.style.display = state.photos.length ? 'none':'block';
-  // newest first for quick access
-  [...state.photos].reverse().forEach(p=>{
+  state.photos.forEach((p, idx)=>{
     const div = document.createElement('div');
     div.className='thumb';
     div.innerHTML = `
@@ -620,12 +678,34 @@ function renderThumbs(){
           <option value="checklist" ${p.tag==='checklist'?'selected':''}>فحص</option>
           <option value="workshop" ${p.tag==='workshop'?'selected':''}>ورشة توعوية</option>
         </select>
+        <button class="moveBtn up" data-idx="${idx}" title="أعلى">▲</button>
+        <button class="moveBtn down" data-idx="${idx}" title="أسفل">▼</button>
+        <button class="dl" data-id="${p.id}">تحميل</button>
         <button class="del" data-id="${p.id}">حذف</button>
       </div>`;
     grid.appendChild(div);
   });
   grid.querySelectorAll('.del').forEach(b=>b.addEventListener('click', e=>{
     state.photos = state.photos.filter(p=>String(p.id)!==e.target.dataset.id);
+    renderThumbs();
+    autosave();
+  }));
+  grid.querySelectorAll('.dl').forEach(b=>b.addEventListener('click', e=>{
+    const p = state.photos.find(p=>String(p.id)===e.target.dataset.id);
+    if(!p) return;
+    const link = document.createElement('a');
+    link.href = p.dataUrl;
+    const wo = state.article.workOrder || 'صورة';
+    link.download = `${wo}-${p.time.replace(/:/g,'')}.jpg`;
+    link.click();
+    toast('تم تحميل الصورة');
+  }));
+  grid.querySelectorAll('.moveBtn').forEach(b=>b.addEventListener('click', e=>{
+    const idx = parseInt(e.target.dataset.idx);
+    const dir = e.target.classList.contains('up') ? -1 : 1;
+    const ni = idx + dir;
+    if(ni<0 || ni>=state.photos.length) return;
+    const tmp = state.photos[idx]; state.photos[idx] = state.photos[ni]; state.photos[ni] = tmp;
     renderThumbs();
     autosave();
   }));
@@ -646,63 +726,129 @@ function chatBubble(text, who){
   div.textContent = text;
   document.getElementById('chatlog').appendChild(div);
   div.scrollIntoView({behavior:'smooth', block:'end'});
+  return div;
+}
+// Renders option buttons for a choice step
+function renderOptions(step){
+  clearOptions();
+  const wrap = document.createElement('div');
+  wrap.id = 'chatOptions';
+  wrap.style.cssText = 'display:flex; flex-wrap:wrap; gap:8px; margin-top:8px;';
+  step.options.forEach(opt=>{
+    const b = document.createElement('button');
+    b.className = 'btn small secondary';
+    b.style.width = 'auto';
+    b.textContent = opt;
+    b.addEventListener('click', ()=> submitAnswer(opt));
+    wrap.appendChild(b);
+  });
+  document.getElementById('chatlog').appendChild(wrap);
+  wrap.scrollIntoView({behavior:'smooth', block:'end'});
+}
+function clearOptions(){
+  const ex = document.getElementById('chatOptions');
+  if(ex) ex.remove();
+}
+// Toggle the free-text input vs option buttons based on the current step
+function updateChatInputMode(){
+  const step = chatFlow[state.chatStep];
+  const inputRow = document.getElementById('chatInput').parentElement;
+  if(step && step.options){
+    inputRow.style.display = 'none';
+    renderOptions(step);
+  } else {
+    clearOptions();
+    inputRow.style.display = '';
+  }
+}
+// Advance to next step, skipping any step whose skipIf matches; handles auto-office
+function nextStep(){
+  state.chatStep++;
+  // auto-set office to خريص and skip office question when construction
+  while(state.chatStep < chatFlow.length){
+    const s = chatFlow[state.chatStep];
+    if(s.skipIf && s.skipIf(state.article)){
+      if(s.key === 'office') state.article.office = 'خريص';
+      state.chatStep++;
+    } else break;
+  }
+}
+function askCurrentOrFinish(){
+  if(state.chatStep < chatFlow.length){
+    setTimeout(()=>{ chatBubble(chatFlow[state.chatStep].q, 'bot'); updateChatInputMode(); }, 200);
+    autosave();
+  } else {
+    finishArticle();
+  }
+}
+function finishArticle(){
+  const now = new Date();
+  state.article.day = ARABIC_DAYS[now.getDay()];
+  state.article.date = formatDateEN(now);
+  state.article.time = formatTime24(now);
+  state.chatDone = true;
+  clearOptions();
+  document.getElementById('chatInput').parentElement.style.display='';
+  setTimeout(()=>{
+    chatBubble('تم! جهزت المقال كامل — تقدر تشوفه تحت وتعدله وتنسخه.', 'bot');
+    renderArticle();
+    autosave();
+  }, 200);
 }
 function startChat(){
   document.getElementById('chatlog').innerHTML='';
   document.getElementById('articlePreviewPanel').style.display='none';
-  // If the current visit already has article progress, resume it
+  clearOptions();
   if(state.chatDone){
+    document.getElementById('chatInput').parentElement.style.display='';
     renderArticle();
+    if(state.savedArticleText){ document.getElementById('articleText').value = state.savedArticleText; }
     chatBubble('المقال محفوظ لهذه الزيارة. تقدر تشوفه تحت أو تعيد تعبئته من الزر.', 'bot');
     return;
   }
   if(state.chatStep > 0){
-    // partially answered — replay answered questions then ask the next
     for(let i=0;i<state.chatStep;i++){
+      if(chatFlow[i].skipIf && chatFlow[i].skipIf(state.article)) continue;
       chatBubble(chatFlow[i].q, 'bot');
       chatBubble(state.article[chatFlow[i].key] || '', 'user');
     }
     chatBubble(chatFlow[state.chatStep].q, 'bot');
+    updateChatInputMode();
     return;
   }
   chatBubble('يلا نبدأ تجهيز المقال. '+chatFlow[0].q, 'bot');
+  updateChatInputMode();
 }
-// Fully clears the chat/article for a brand-new visit
 function resetChatFresh(){
   document.getElementById('chatlog').innerHTML='';
+  clearOptions();
+  document.getElementById('chatInput').parentElement.style.display='';
   state.chatStep = 0;
   state.chatDone = false;
   state.article = blankArticle();
+  state.savedArticleText = '';
   document.getElementById('articlePreviewPanel').style.display='none';
   chatBubble('يلا نبدأ تجهيز المقال. '+chatFlow[0].q, 'bot');
+  updateChatInputMode();
 }
-document.getElementById('chatSend').addEventListener('click', sendChat);
-document.getElementById('chatInput').addEventListener('keydown', e=>{ if(e.key==='Enter') sendChat(); });
-function sendChat(){
-  if(state.chatDone) return;
+document.getElementById('chatSend').addEventListener('click', ()=>{
   const input = document.getElementById('chatInput');
   const val = input.value.trim();
   if(!val) return;
-  chatBubble(val, 'user');
   input.value='';
+  submitAnswer(val);
+});
+document.getElementById('chatInput').addEventListener('keydown', e=>{
+  if(e.key==='Enter'){ e.preventDefault(); document.getElementById('chatSend').click(); }
+});
+function submitAnswer(val){
+  if(state.chatDone) return;
+  clearOptions();
+  chatBubble(val, 'user');
   const step = chatFlow[state.chatStep];
   state.article[step.key] = val;
-  state.chatStep++;
-  if(state.chatStep < chatFlow.length){
-    setTimeout(()=>chatBubble(chatFlow[state.chatStep].q, 'bot'), 250);
-    autosave();
-  } else {
-    const now = new Date();
-    state.article.day = ARABIC_DAYS[now.getDay()];
-    state.article.date = formatDateEN(now);
-    state.article.time = formatTime24(now);
-    state.chatDone = true;
-    setTimeout(()=>{
-      chatBubble('تم! جهزت المقال كامل — تقدر تشوفه تحت وتنسخه.', 'bot');
-      renderArticle();
-      autosave();
-    }, 250);
-  }
+  nextStep();
+  askCurrentOrFinish();
 }
 function renderArticle(){
   const a = state.article;
@@ -724,6 +870,8 @@ function renderArticle(){
     ? `عدد الملاحظات الكلي ${totalCount}\nالمغلقة :- ${closedCount}`
     : `عدد الملاحظات الكلي\nالمغلقة :-`;
 
+  const workTypeLine = [a.workType, a.workCategory, a.office].filter(Boolean).join(' - ');
+
   const text =
 `الإدارة : كهرباء مدينة الرياض
 الاسناد : PDC / DE
@@ -734,7 +882,7 @@ function renderArticle(){
 📜اليوم: ${a.day}
 📆التاريخ: ${a.date}
 ⏰الوقت : ${a.time}
-♦️نوع العمل: ${a.workType}
+♦️نوع العمل: ${workTypeLine}
 رقم العمل :- ${a.workOrder}
 اسم المستلم :- ${a.receiver}
 اسم المصدر:- ${a.source}
@@ -743,12 +891,13 @@ function renderArticle(){
 ${redSection}
 🟢 الملاحظات:-
 ${countsBlock}`;
-  document.getElementById('articleText').textContent = text;
+  document.getElementById('articleText').value = text;
   document.getElementById('articlePreviewPanel').style.display='block';
 }
+document.getElementById('articleText').addEventListener('input', ()=> autosave());
 document.getElementById('chatRestart').addEventListener('click', ()=>{ resetChatFresh(); autosave(); });
 document.getElementById('copyArticle').addEventListener('click', ()=>{
-  navigator.clipboard.writeText(document.getElementById('articleText').textContent);
+  navigator.clipboard.writeText(document.getElementById('articleText').value);
   toast('تم نسخ نص المقال');
 });
 
@@ -808,27 +957,52 @@ function recompressImage(dataUrl, maxWidth, quality){
 // Per-file budget so that ~3 exported PDFs together stay under ~10MB
 const PDF_BYTE_BUDGET = 3.2 * 1024 * 1024;
 const QUALITY_STEPS = [
-  {maxWidth:2000, quality:0.85},
-  {maxWidth:1600, quality:0.75},
-  {maxWidth:1280, quality:0.65},
-  {maxWidth:1000, quality:0.55},
-  {maxWidth:800,  quality:0.45},
-  {maxWidth:640,  quality:0.4},
+  {maxWidth:2600, quality:0.85},
+  {maxWidth:2000, quality:0.78},
+  {maxWidth:1600, quality:0.7},
+  {maxWidth:1280, quality:0.6},
+  {maxWidth:1000, quality:0.5},
+  {maxWidth:800,  quality:0.42},
 ];
+
+function loadImageEl(src){
+  return new Promise((resolve)=>{
+    const img = new Image();
+    img.onload = ()=> resolve(img);
+    img.onerror = ()=> resolve(null);
+    img.src = src;
+  });
+}
 
 async function buildPdf(photos, filename){
   if(!photos.length){ toast('لا توجد صور بهذا التصنيف'); return; }
   toast('جاري تجهيز الملف...');
 
   for(const step of QUALITY_STEPS){
-    const doc = new jspdf.jsPDF({unit:'mm', format:'a4'});
+    let doc = null;
     for(let i=0;i<photos.length;i++){
-      if(i>0) doc.addPage();
       const compressed = await recompressImage(photos[i].dataUrl, step.maxWidth, step.quality);
-      const pageW = doc.internal.pageSize.getWidth();
-      const pageH = doc.internal.pageSize.getHeight();
-      const margin = 8;
-      doc.addImage(compressed, 'JPEG', margin, margin, pageW-margin*2, pageH-margin*2, undefined, 'FAST');
+      const img = await loadImageEl(compressed);
+      const iw = img ? img.naturalWidth : 1000;
+      const ih = img ? img.naturalHeight : 1333;
+      const orientation = iw >= ih ? 'landscape' : 'portrait';
+      // page sized to A4 in the matching orientation
+      const pageW = orientation === 'landscape' ? 297 : 210;
+      const pageH = orientation === 'landscape' ? 210 : 297;
+      if(!doc){
+        doc = new jspdf.jsPDF({unit:'mm', format:'a4', orientation});
+      } else {
+        doc.addPage('a4', orientation);
+      }
+      // fit image within page preserving aspect ratio, small uniform margin
+      const margin = 6;
+      const availW = pageW - margin*2;
+      const availH = pageH - margin*2;
+      const scale = Math.min(availW/iw, availH/ih);
+      const dw = iw*scale, dh = ih*scale;
+      const x = (pageW - dw)/2;
+      const y = (pageH - dh)/2;
+      doc.addImage(compressed, 'JPEG', x, y, dw, dh, undefined, 'FAST');
     }
     const blob = doc.output('blob');
     if(blob.size <= PDF_BYTE_BUDGET || step === QUALITY_STEPS[QUALITY_STEPS.length-1]){
@@ -867,11 +1041,13 @@ document.getElementById('exportPackage').addEventListener('click', ()=>{
 الوقت: ${a.time}
 اسم المقاول: ${a.contractor}
 الموقع: ${a.location}
-نوع العمل: ${a.workType}
+نوع العمل: ${[a.workType, a.workCategory, a.office].filter(Boolean).join(' - ')}
 رقم العمل: ${a.workOrder}
 المستلم: ${a.receiver}
 المصدر: ${a.source}
 منفذ الزيارة: ${a.executor}
+رقم التصريح: ${a.permitNum}
+ورشة توعوية: ${a.workshopDone || ''}
 
 نص الملاحظات كما أُدخل:
 ${a.notesRaw}
@@ -966,14 +1142,20 @@ document.getElementById('clearArchiveBtn').addEventListener('click', async ()=>{
 document.getElementById('exportExcelBtn').addEventListener('click', async ()=>{
   const list = (await dbGetAll()).sort((a,b)=>(a.updatedAt||0)-(b.updatedAt||0));
   if(!list.length){ toast('لا توجد زيارات محفوظة'); return; }
-  const headers = ["رقم","الاستشاري ","منفذ الزيارة","تاريخ الزيارة","الحي","المقاول ","رقم امر العمل ","المصدر","المستلم","رقم التصريح","نوع العمل ","الملاحظة "];
+  const headers = ["رقم","الاستشاري ","منفذ الزيارة","تاريخ الزيارة","الحي","المقاول ","رقم امر العمل ","المصدر","المستلم","رقم التصريح","نوع العمل ","الملاحظة ","ورشه توعويه ","إيقاف العمل  "];
   const rows = list.map((v,i)=>{
     const a = v.article || {};
-    return [ i+1, "التصميم الفني", a.executor||"", a.date||"", a.location||"", a.contractor||"", a.workOrder||"", a.source||"", a.receiver||"", a.permitNum||"", a.workType||"", "" ];
+    // detect stop-work from the notes text
+    const notes = a.notesRaw || '';
+    const stopWork = /(تم\s*)?(إيقاف|ايقاف)\s*العمل/.test(notes) ? "نعم" : "";
+    const workshop = a.workshopDone === "نعم" ? "نعم" : (a.workshopDone === "لا" ? "لا" : "");
+    return [ i+1, "التصميم الفني", a.executor||"", a.date||"", a.location||"", a.contractor||"", a.workOrder||"", a.source||"", a.receiver||"", a.permitNum||"", a.workType||"", "", workshop, stopWork ];
   });
   const ws = XLSX.utils.aoa_to_sheet([headers, ...rows]);
   const wb = XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(wb, ws, "التصميم الفني");
+  const today = formatDateEN(new Date()).replace(/\//g,'-');
+  const sheetName = `الزيارات اليومية ${today}`.slice(0,31);
+  XLSX.utils.book_append_sheet(wb, ws, sheetName);
   XLSX.writeFile(wb, "زيارات-الأرشيف.xlsx");
   toast('تم تنزيل ملف الإكسل');
 });
