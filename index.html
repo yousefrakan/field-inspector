@@ -574,22 +574,39 @@ updateAngle();
 window.addEventListener('orientationchange', ()=> setTimeout(updateAngle, 100));
 if(screen.orientation) screen.orientation.addEventListener('change', updateAngle);
 
-// Shutter sound (WebAudio click) so user knows a photo was taken
+// Shutter sound — synthesized iPhone-style mechanical double click
 let _audioCtx = null;
 function playShutter(){
   try{
     _audioCtx = _audioCtx || new (window.AudioContext||window.webkitAudioContext)();
     const ctx = _audioCtx;
     if(ctx.state === 'suspended') ctx.resume();
-    const o = ctx.createOscillator();
-    const g = ctx.createGain();
-    o.type = 'square';
-    o.frequency.setValueAtTime(1200, ctx.currentTime);
-    o.frequency.exponentialRampToValueAtTime(400, ctx.currentTime+0.08);
-    g.gain.setValueAtTime(0.25, ctx.currentTime);
-    g.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime+0.12);
-    o.connect(g); g.connect(ctx.destination);
-    o.start(); o.stop(ctx.currentTime+0.12);
+    const t0 = ctx.currentTime;
+
+    // A short filtered noise burst = the mechanical "clack"
+    function clack(at, gainVal, dur, filterFreq){
+      const bufLen = Math.floor(ctx.sampleRate * dur);
+      const buf = ctx.createBuffer(1, bufLen, ctx.sampleRate);
+      const data = buf.getChannelData(0);
+      for(let i=0;i<bufLen;i++){
+        // decaying noise
+        data[i] = (Math.random()*2-1) * Math.pow(1 - i/bufLen, 2.2);
+      }
+      const src = ctx.createBufferSource();
+      src.buffer = buf;
+      const bp = ctx.createBiquadFilter();
+      bp.type = 'bandpass';
+      bp.frequency.value = filterFreq;
+      bp.Q.value = 0.8;
+      const g = ctx.createGain();
+      g.gain.value = gainVal;
+      src.connect(bp); bp.connect(g); g.connect(ctx.destination);
+      src.start(at);
+      src.stop(at + dur);
+    }
+    // iPhone shutter = two quick clicks (open + close), the 2nd a touch softer
+    clack(t0, 0.5, 0.045, 2600);
+    clack(t0 + 0.085, 0.38, 0.055, 1900);
   }catch(e){}
 }
 
