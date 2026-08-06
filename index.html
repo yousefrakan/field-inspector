@@ -117,6 +117,12 @@
     width:32px; padding:6px 0; background:var(--panel); border:1px solid var(--line);
     color:var(--ink); border-radius:6px; font-size:12px; cursor:pointer;
   }
+  .dragHandle{
+    background:var(--panel); color:var(--ink-dim); font-size:12px; text-align:center;
+    padding:7px; cursor:grab; user-select:none; border-bottom:1px solid var(--line);
+    touch-action:none;
+  }
+  .thumb.dragging{ opacity:0.6; outline:2px dashed var(--hazard); }
   .lightbox{
     position:fixed; inset:0; background:rgba(0,0,0,.92); z-index:100;
     display:flex; align-items:center; justify-content:center; padding:20px;
@@ -669,7 +675,9 @@ function renderThumbs(){
   state.photos.forEach((p, idx)=>{
     const div = document.createElement('div');
     div.className='thumb';
+    div.dataset.idx = idx;
     div.innerHTML = `
+      <div class="dragHandle" title="اسحب للترتيب">☰ اسحب لترتيب الصورة</div>
       <img src="${p.dataUrl}" data-id="${p.id}" class="openLb">
       <div class="thumbBar">
         <select data-id="${p.id}">
@@ -678,8 +686,6 @@ function renderThumbs(){
           <option value="checklist" ${p.tag==='checklist'?'selected':''}>فحص</option>
           <option value="workshop" ${p.tag==='workshop'?'selected':''}>ورشة توعوية</option>
         </select>
-        <button class="moveBtn up" data-idx="${idx}" title="أعلى">▲</button>
-        <button class="moveBtn down" data-idx="${idx}" title="أسفل">▼</button>
         <button class="dl" data-id="${p.id}">تحميل</button>
         <button class="del" data-id="${p.id}">حذف</button>
       </div>`;
@@ -700,15 +706,7 @@ function renderThumbs(){
     link.click();
     toast('تم تحميل الصورة');
   }));
-  grid.querySelectorAll('.moveBtn').forEach(b=>b.addEventListener('click', e=>{
-    const idx = parseInt(e.target.dataset.idx);
-    const dir = e.target.classList.contains('up') ? -1 : 1;
-    const ni = idx + dir;
-    if(ni<0 || ni>=state.photos.length) return;
-    const tmp = state.photos[idx]; state.photos[idx] = state.photos[ni]; state.photos[ni] = tmp;
-    renderThumbs();
-    autosave();
-  }));
+  setupDragReorder(grid);
   grid.querySelectorAll('select').forEach(s=>s.addEventListener('change', e=>{
     const p = state.photos.find(p=>String(p.id)===e.target.dataset.id);
     if(p) p.tag = e.target.value;
@@ -717,6 +715,55 @@ function renderThumbs(){
   grid.querySelectorAll('.openLb').forEach(img=>img.addEventListener('click', e=>{
     openLightbox(e.target.src);
   }));
+}
+
+// Touch/mouse drag reorder using the drag handle
+function setupDragReorder(grid){
+  let dragEl = null, dragIdx = -1;
+  grid.querySelectorAll('.thumb').forEach(thumb=>{
+    const handle = thumb.querySelector('.dragHandle');
+    if(!handle) return;
+
+    function startDrag(clientY){
+      dragEl = thumb; dragIdx = parseInt(thumb.dataset.idx);
+      thumb.classList.add('dragging');
+    }
+    function moveDrag(clientY){
+      if(!dragEl) return;
+      const thumbs = [...grid.querySelectorAll('.thumb')];
+      let target = null;
+      for(const t of thumbs){
+        if(t===dragEl) continue;
+        const r = t.getBoundingClientRect();
+        if(clientY < r.top + r.height/2){ target = t; break; }
+      }
+      if(target) grid.insertBefore(dragEl, target);
+      else grid.appendChild(dragEl);
+    }
+    function endDrag(){
+      if(!dragEl) return;
+      dragEl.classList.remove('dragging');
+      // rebuild photo order from DOM
+      const newOrder = [...grid.querySelectorAll('.thumb')].map(t=>parseInt(t.dataset.idx));
+      state.photos = newOrder.map(i=>state.photos[i]);
+      dragEl = null; dragIdx = -1;
+      renderThumbs();
+      autosave();
+    }
+
+    // touch
+    handle.addEventListener('touchstart', (e)=>{ e.preventDefault(); startDrag(e.touches[0].clientY); }, {passive:false});
+    handle.addEventListener('touchmove', (e)=>{ e.preventDefault(); moveDrag(e.touches[0].clientY); }, {passive:false});
+    handle.addEventListener('touchend', endDrag);
+    // mouse (for desktop testing)
+    handle.addEventListener('mousedown', (e)=>{
+      e.preventDefault(); startDrag(e.clientY);
+      const mm = (ev)=> moveDrag(ev.clientY);
+      const mu = ()=>{ endDrag(); document.removeEventListener('mousemove', mm); document.removeEventListener('mouseup', mu); };
+      document.addEventListener('mousemove', mm);
+      document.addEventListener('mouseup', mu);
+    });
+  });
 }
 
 // ---------- Chat article builder ----------
