@@ -184,7 +184,7 @@
 <nav class="tabs" id="tabs">
   <button data-tab="camera" class="active">📷 تصوير</button>
   <button data-tab="chat">📝 المقال</button>
-  <button data-tab="violations">⚠️ المخالفات</button>
+  <button data-tab="followup">📋 متابعة الملاحظات</button>
   <button data-tab="export">📦 التصدير</button>
   <button data-tab="archive">🗄️ الأرشيف</button>
 </nav>
@@ -208,7 +208,9 @@
       <option value="checklist">قائمة الفحص</option>
       <option value="workshop">ورشة توعوية</option>
     </select>
-    <button class="btn secondary" id="sortToggleBtn" style="margin-top:14px;">ترتيب الصور</button>
+    <input type="file" id="galleryInput" accept="image/*" multiple style="display:none;">
+    <button class="btn secondary" id="galleryBtn" style="margin-top:14px;">إضافة صور من المعرض</button>
+    <button class="btn secondary" id="sortToggleBtn" style="margin-top:10px;">ترتيب الصور</button>
     <div id="sortModeBar" style="display:none; align-items:center; gap:10px; margin-top:14px; background:var(--asphalt); border:1px solid var(--hazard); border-radius:8px; padding:10px 12px;">
       <span style="flex:1; font-size:12.5px; color:var(--ink-dim);">اسحب الصور لترتيبها</span>
       <button class="btn small" id="sortDoneBtn" style="width:auto;">تم</button>
@@ -239,22 +241,27 @@
   </div>
 </section>
 
-<!-- VIOLATIONS TAB -->
-<section id="tab-violations" style="display:none;">
+<!-- FOLLOW-UP TAB -->
+<section id="tab-followup" style="display:none;">
   <div class="panel">
-    <h2>مخالفات هذه الزيارة</h2>
-    <div id="chosenViolations"></div>
-    <label>إضافة مخالفة برقمها (1-30)</label>
-    <div style="display:flex; gap:8px;">
-      <input id="violNumInput" type="number" min="1" max="30" placeholder="مثال: 7">
-      <button class="btn small" id="addViolBtn">إضافة</button>
+    <h2>متابعة الملاحظات</h2>
+    <div class="sub" style="color:var(--ink-dim); font-size:12px; margin-bottom:10px;">
+      أدخل رقم الزيارة (من ملف متابعة الزيارات اليومية)، وسيتم توليد ملف إكسل بكل ملاحظات هذه الزيارة، كل ملاحظة بصف مستقل.
     </div>
+    <label>رقم الزيارة</label>
+    <div style="display:flex; gap:8px;">
+      <input id="visitNumInput" type="text" placeholder="مثال: SV-4413">
+      <button class="btn small" id="saveVisitNumBtn" style="width:auto;">حفظ</button>
+    </div>
+    <div id="visitNumStatus" class="meta" style="color:var(--ink-dim); font-size:12px; margin-top:8px;"></div>
   </div>
   <div class="panel">
-    <h2>الجدول المرجعي (30 بند)</h2>
-    <div class="scroll-x">
-      <table class="reftable" id="refTable"></table>
-    </div>
+    <h2>ملاحظات هذه الزيارة</h2>
+    <div id="followupPreview"></div>
+  </div>
+  <div class="panel">
+    <h2>تصدير</h2>
+    <button class="btn" id="exportFollowupBtn">تنزيل ملف متابعة الملاحظات (إكسل)</button>
   </div>
 </section>
 
@@ -264,7 +271,7 @@
     <h2>حالة الزيارة</h2>
     <div class="kv"><span>عدد الصور</span><span id="expPhotoCount">0</span></div>
     <div class="kv"><span>المقال</span><span id="expArticleStatus">غير جاهز</span></div>
-    <div class="kv"><span>عدد المخالفات</span><span id="expViolCount">0</span></div>
+    <div class="kv"><span>عدد الملاحظات</span><span id="expViolCount">0</span></div>
   </div>
 
   <div class="panel">
@@ -276,12 +283,11 @@
   </div>
 
   <div class="panel">
-    <h2>حزمة محضر المخالفة</h2>
+    <h2>حزمة بيانات الزيارة</h2>
     <div class="sub" style="color:var(--ink-dim); font-size:12px; margin-bottom:10px;">
-      توليد ملف Word النهائي بالقالب الرسمي (خريص/الشمال مع تصحيح الجدول المدمج وكل القواعد المتفق عليها) يحتاج معالجة على حساب Claude في المحادثة العادية — التطبيق لا يقدر يبنيه بنفس الدقة داخل المتصفح.
-      اضغط الزر تحت لتنزيل ملف نصي يلخص كل بيانات المحضر (المقاول، رقم العقد، المكتب، أرقام المخالفات)، ثم الصقه لي في أي محادثة عادية وسأجهز لك ملف الوورد النهائي مباشرة للمراجعة.
+      ملف نصي يلخص كل بيانات الزيارة والملاحظات، تقدر تنسخه وتستخدمه بأي مكان.
     </div>
-    <button class="btn" id="exportPackage">تنزيل حزمة بيانات المحضر (.txt)</button>
+    <button class="btn" id="exportPackage">تنزيل حزمة بيانات الزيارة (.txt)</button>
   </div>
 
   <div class="panel">
@@ -314,39 +320,7 @@
 </main>
 
 <script>
-// ---------- Reference data (editable later via storage) ----------
-const DEFAULT_VIOLATIONS = [
- [1,"19-2-1-ب-ثالثا-1","عدم حمل بطاقة التعميد والتاهيل في موقع العمل","A",7000],
- [2,"19-2-1-ب-ثالثا-2","مخالفة عدم تأهيل سائق معدات","B",2000],
- [3,"19-2-1-ب-ثالثا-3","عدم تدريب الموظفين على إجراءات العمل الآمن وتقييم المخاطر واجتماع ما قبل العمل وتوفرها بموقع العمل باللغة التي يفهمها العاملون","B",2000],
- [4,"19-2-1-ب-ثالثا-4","البدء بالعمل دون تركيب أقفال السلامة المعتمدة بالشركة","A",7000],
- [5,"19-2-1-ب-ثالثا-5","عدم وجود البطاقات التحذيرية","B",2000],
- [6,"19-2-1-ب-ثالثا-6","عدم الالتزام بمسافة الخلوص الآمنة للخطوط الهوائية","B",2000],
- [7,"19-2-1-ب-ثالثا-7","العمل من دون تصريح عمل","A",7000],
- [8,"19-2-1-ب-ثالثا-8","عدم ارتداء ملابس الحماية من السقوط","A",7000],
- [9,"19-2-1-ب-ثالثا-9","عدم ارتداء ملابس / مهمات الوقاية الشخصية (صالحة ومطابقة للمواصفات)","A",7000],
- [10,"19-2-1-ب-ثالثا-10","عدم توفير مصدر تغذية آمن","B",2000],
- [11,"19-2-1-ب-ثالثا-11","استخدام عدد يدوية غير معزولة","B",2000],
- [12,"19-2-1-ب-ثالثا-12","استخدام حواجز حماية تالفة أو غير مكتملة","C",500],
- [13,"19-2-1-ب-ثالثا-13","عدم وضع حواجز الحماية في أماكنها الصحيحة","C",500],
- [14,"19-2-1-ب-ثالثا-14","عدم وضع حواجز وإشارات ولوحات مرورية وإنارة ليلية على الطرق وإغلاق منطقة العمل","A",7000],
- [15,"19-2-1-ب-ثالثا-15","عدم تسجيل الحمل الأقصى الآمن على معدات السلامة","C",500],
- [16,"19-2-1-ب-ثالثا-16","عدم سلامة المركبات","C",500],
- [17,"19-2-1-ب-ثالثا-17","عدم سلامة المعدات","B",2000],
- [18,"19-2-1-ب-ثالثا-18","عدم توفير طفايات حريق صالحة ومفحوصة","C",500],
- [19,"19-2-1-ب-ثالثا-19","عدم وجود مسعف / مكافح حريق مؤهل","C",500],
- [20,"19-2-1-ب-ثالثا-20","التدخين في منطقة العمل","C",500],
- [21,"19-2-1-ب-ثالثا-21","عدم توفير حقيبة إسعافات أولية كاملة","C",500],
- [22,"19-2-1-ب-ثالثا-22","عدم وجود الشعار الخاص بالمقاول","C",500],
- [23,"19-2-1-ب-ثالثا-23","عدم إزالة المخلفات بعد الانتهاء من العمل","C",500],
- [24,"19-2-1-ب-ثالثا-24","عدم تطبيق أنظمة السلامة والصحة المهنية على مستودع المقاول","C",500],
- [25,"19-2-1-أ","عدم التقيد بطريقة تمديد الكابلات وسحب الأسلاك الهوائية حسب المواصفات الإنشائية","لاينطبق",500],
- [26,"19-2-1-هـ","استخدام عمالة غير نظامية","لاينطبق",500],
- [27,"19-2-1-و","سوء نقل أو تخزين المواد","لاينطبق",500],
- [28,"19-2-1-ز","تخزين المواد في مستودع غير معلن للشركة","لاينطبق",500],
- [29,"19-2-1-د","التعاقد مع مقاول من الباطن دون موافقة الشركة","لاينطبق",500],
- [30,"19-2-1-ح","غرامة الاعتذار من تنفيذ العمل أو عدم بدء المقاول بإجراءات التنفيذ مع تحويل أمر العمل لمقاول آخر","لاينطبق",500],
-];
+// ---------- App data ----------
 
 // ---------- IndexedDB storage (large capacity, for photos + visits) ----------
 const DB_NAME = 'fieldInspectorDB';
@@ -414,7 +388,7 @@ async function dbClear(){
 const CURRENT_ID_KEY = 'fieldInspectorCurrentId';
 
 function blankArticle(){
-  return { contractor:"", location:"", workType:"", workCategory:"", office:"", workOrder:"", receiver:"", source:"", executor:"", notesRaw:"", permitNum:"", workshopDone:"", day:"", date:"", time:"" };
+  return { contractor:"", location:"", workType:"", workCategory:"", office:"", workOrder:"", receiver:"", source:"", executor:"", notesRaw:"", permitNum:"", workshopDone:"", visitNum:"", day:"", date:"", time:"" };
 }
 
 let state = {
@@ -424,7 +398,6 @@ let state = {
   article: blankArticle(),
   chatStep:0,
   chatDone:false,
-  violations:[]       // numbers
 };
 
 // Autosave: writes the current visit to the DB after any change (debounced)
@@ -445,7 +418,6 @@ function snapshotVisit(){
     updatedAt: Date.now(),
     photos: state.photos,
     article: {...state.article},
-    violations: [...state.violations],
     chatStep: state.chatStep,
     chatDone: state.chatDone,
     articleText: (document.getElementById('articleText')?.value) || ''
@@ -456,7 +428,6 @@ function loadVisitIntoState(v){
   state.status = v.status || 'open';
   state.photos = v.photos || [];
   state.article = {...blankArticle(), ...(v.article||{})};
-  state.violations = v.violations || [];
   state.chatStep = v.chatStep || 0;
   state.chatDone = v.chatDone || false;
   state.savedArticleText = v.articleText || '';
@@ -466,7 +437,6 @@ async function startNewVisit(){
   state.status = 'open';
   state.photos = [];
   state.article = blankArticle();
-  state.violations = [];
   state.chatStep = 0;
   state.chatDone = false;
   try{ localStorage.setItem(CURRENT_ID_KEY, state.id); }catch(e){}
@@ -539,7 +509,7 @@ document.getElementById('tabs').addEventListener('click', (e)=>{
   btn.classList.add('active');
   document.querySelectorAll('main > section').forEach(s=>s.style.display='none');
   document.getElementById('tab-'+btn.dataset.tab).style.display='block';
-  if(btn.dataset.tab==='violations') renderRefTable();
+  if(btn.dataset.tab==='followup') renderFollowup();
   if(btn.dataset.tab==='export') renderExportTab();
   if(btn.dataset.tab==='archive') renderArchive();
 });
@@ -695,6 +665,36 @@ document.getElementById('shutterBtn').addEventListener('click', ()=>{
   makeThumb(dataUrl).then(t=>{ photo.thumb = t; renderThumbs(); autosave(); });
   autosave();
   toast('تم حفظ الصورة');
+});
+
+// ---------- Import photos from the device gallery ----------
+document.getElementById('galleryBtn').addEventListener('click', ()=> document.getElementById('galleryInput').click());
+document.getElementById('galleryInput').addEventListener('change', async (e)=>{
+  const files = [...e.target.files];
+  if(!files.length) return;
+  const tag = document.getElementById('photoTag').value;
+  showProgress(`جاري إضافة ${files.length} صورة...`);
+  for(let i=0;i<files.length;i++){
+    showProgress(`جاري إضافة الصورة ${i+1} من ${files.length}`);
+    await yieldToUI();
+    const dataUrl = await new Promise((res)=>{
+      const r = new FileReader();
+      r.onload = ()=> res(r.result);
+      r.onerror = ()=> res(null);
+      r.readAsDataURL(files[i]);
+    });
+    if(!dataUrl) continue;
+    const now = new Date();
+    const timeSec = `${formatTime24(now)}:${String(now.getSeconds()).padStart(2,'0')}`;
+    const photo = {id:Date.now()+Math.random(), dataUrl, thumb:null, tag, time:timeSec, lat:null, lon:null, place:'', imported:true};
+    photo.thumb = await makeThumb(dataUrl);
+    state.photos.push(photo);
+  }
+  e.target.value = '';
+  hideProgress();
+  renderThumbs();
+  autosave();
+  toast('تمت إضافة الصور');
 });
 
 // Small preview version used only for on-screen lists (full image kept for PDF/download)
@@ -1015,40 +1015,71 @@ document.getElementById('copyArticle').addEventListener('click', ()=>{
   toast('تم نسخ نص المقال');
 });
 
-// ---------- Violations ----------
-function renderRefTable(){
-  const t = document.getElementById('refTable');
-  t.innerHTML = `<tr><th>#</th><th>البند</th><th>الوصف</th><th>الفئة</th><th>القيمة</th></tr>` +
-    DEFAULT_VIOLATIONS.map(v=>`<tr><td>${v[0]}</td><td class="mono" style="direction:ltr;">${v[1]}</td><td>${v[2]}</td><td>${v[3]}</td><td>${v[4]}</td></tr>`).join('');
-}
-function renderChosenViolations(){
-  const wrap = document.getElementById('chosenViolations');
-  if(!state.violations.length){ wrap.innerHTML = '<div class="empty">لا توجد مخالفات مضافة</div>'; return; }
-  wrap.innerHTML = state.violations.map(n=>{
-    const v = DEFAULT_VIOLATIONS.find(x=>x[0]===n);
-    return `<span class="violtag">مخالفة ${n} — ${v?v[2].slice(0,22)+(v[2].length>22?'…':''):''} <button data-n="${n}">×</button></span>`;
+// ---------- Follow-up tracking (متابعة الملاحظات) ----------
+function renderFollowup(){
+  document.getElementById('visitNumInput').value = state.article.visitNum || '';
+  document.getElementById('visitNumStatus').textContent =
+    state.article.visitNum ? `رقم الزيارة المحفوظ: ${state.article.visitNum}` : 'لم يتم إدخال رقم الزيارة بعد.';
+
+  const parsed = parseNotes(state.article.notesRaw);
+  const wrap = document.getElementById('followupPreview');
+  if(!parsed.points.length){
+    wrap.innerHTML = '<div class="empty">لا توجد ملاحظات لهذه الزيارة</div>';
+    return;
+  }
+  const base = state.article.visitNum || '—';
+  wrap.innerHTML = parsed.points.map((p,i)=>{
+    const num = `${base}-${String(i+1).padStart(2,'0')}`;
+    const closed = p.closed ? '<span class="pill" style="border-color:var(--hazard);color:var(--hazard)">مغلقة</span>' : '';
+    return `<div class="kv"><span>${num}</span><span style="flex:1; text-align:right; padding-right:8px;">${p.text} ${closed}</span></div>`;
   }).join('');
-  wrap.querySelectorAll('button').forEach(b=>b.addEventListener('click', e=>{
-    state.violations = state.violations.filter(n=>String(n)!==e.target.dataset.n);
-    renderChosenViolations();
-    autosave();
-  }));
 }
-document.getElementById('addViolBtn').addEventListener('click', ()=>{
-  const n = parseInt(document.getElementById('violNumInput').value);
-  if(!n || n<1 || n>30){ toast('اكتب رقم بين 1 و 30'); return; }
-  if(!state.violations.includes(n)) state.violations.push(n);
-  document.getElementById('violNumInput').value='';
-  renderChosenViolations();
+document.getElementById('saveVisitNumBtn').addEventListener('click', ()=>{
+  const val = document.getElementById('visitNumInput').value.trim();
+  state.article.visitNum = val;
   autosave();
+  renderFollowup();
+  toast(val ? 'تم حفظ رقم الزيارة' : 'تم مسح رقم الزيارة');
 });
-renderChosenViolations();
+
+document.getElementById('exportFollowupBtn').addEventListener('click', ()=>{
+  const a = state.article;
+  if(!a.visitNum){ toast('أدخل رقم الزيارة أولاً'); return; }
+  const parsed = parseNotes(a.notesRaw);
+  if(!parsed.points.length){ toast('لا توجد ملاحظات لتصديرها'); return; }
+
+  const headers = ["رقم الزيارة ","رقم الملاحظة","منفذ الزيارة","تاريخ الزيارة","الحي","المقاول ","رقم امر العمل ","نوع العمل ","الملاحظة ","Non Compliance to Life Saving Rules ","الإجراء التصحيحي","التاريخ المستهدف للاغلاق","حالة الملاحظة","الملاحظات"];
+  // date format with dashes, e.g. 31-08-2026
+  const visitDate = (a.date || '').replace(/\//g,'-');
+  const rows = parsed.points.map((p,i)=>[
+    a.visitNum,
+    `${a.visitNum}-${String(i+1).padStart(2,'0')}`,
+    a.executor || "",
+    visitDate,
+    a.location || "",
+    a.contractor || "",
+    a.workOrder || "",
+    a.workType || "",
+    p.closed ? `${p.text} (تم التعديل)` : p.text,
+    "",                       // Non Compliance — always blank
+    "",                       // الإجراء التصحيحي — filled manually
+    visitDate,                // التاريخ المستهدف للاغلاق = visit date
+    p.closed ? "مغلقة" : "",  // حالة الملاحظة
+    ""                        // الملاحظات — always blank
+  ]);
+  const ws = XLSX.utils.aoa_to_sheet([headers, ...rows]);
+  const wb = XLSX.utils.book_new();
+  const today = formatDateEN(new Date()).replace(/\//g,'-');
+  XLSX.utils.book_append_sheet(wb, ws, `الزيارات اليومية ${today}`.slice(0,31));
+  XLSX.writeFile(wb, `متابعة الملاحظات ${a.visitNum}.xlsx`);
+  toast('تم تنزيل ملف متابعة الملاحظات');
+});
 
 // ---------- Export tab ----------
 function renderExportTab(){
   document.getElementById('expPhotoCount').textContent = state.photos.length;
   document.getElementById('expArticleStatus').textContent = state.chatDone ? 'جاهز' : 'غير مكتمل';
-  document.getElementById('expViolCount').textContent = state.violations.length;
+  document.getElementById('expViolCount').textContent = parseNotes(state.article.notesRaw).points.length;
 }
 
 // Re-encodes a dataUrl through a canvas at a given max width and JPEG quality
@@ -1153,13 +1184,12 @@ document.getElementById('pdfWorkshop').addEventListener('click', ()=> buildPdf(s
 
 document.getElementById('exportPackage').addEventListener('click', ()=>{
   const a = state.article;
-  const violLines = state.violations.map(n=>{
-    const v = DEFAULT_VIOLATIONS.find(x=>x[0]===n);
-    return v ? `${v[0]} | ${v[1]} | ${v[2]} | فئة ${v[3]} | ${v[4]} ريال` : `${n} | غير موجود`;
-  }).join('\n');
+  const parsed = parseNotes(a.notesRaw);
+  const noteLines = parsed.points.map((p,i)=> `${i+1}. ${p.text}${p.closed ? ' (تم التعديل)' : ''}`).join('\n');
   const text =
-`حزمة بيانات محضر المخالفة
+`حزمة بيانات الزيارة
 =========================
+رقم الزيارة: ${a.visitNum || ''}
 اليوم: ${a.day}
 التاريخ: ${a.date}
 الوقت: ${a.time}
@@ -1172,18 +1202,16 @@ document.getElementById('exportPackage').addEventListener('click', ()=>{
 منفذ الزيارة: ${a.executor}
 رقم التصريح: ${a.permitNum}
 ورشة توعوية: ${a.workshopDone || ''}
+${parsed.stopWork ? 'إيقاف العمل: نعم' : ''}
 
-نص الملاحظات كما أُدخل:
-${a.notesRaw}
-
-المخالفات المختارة (${state.violations.length}):
-${violLines || 'لا يوجد'}
+الملاحظات (${parsed.points.length}):
+${noteLines || 'لا يوجد'}
 ---
-الصق هذا النص في محادثة عادية مع Claude لتوليد ملف الوورد النهائي، وأرفق الصور بشكل منفصل عند الحاجة.`;
+الصق هذا النص في محادثة عادية مع Claude عند الحاجة، وأرفق الصور بشكل منفصل.`;
   const blob = new Blob([text], {type:'text/plain;charset=utf-8'});
   const url = URL.createObjectURL(blob);
   const link = document.createElement('a');
-  link.href = url; link.download = 'حزمة-المحضر.txt';
+  link.href = url; link.download = 'حزمة-الزيارة.txt';
   link.click();
   toast('تم تنزيل حزمة البيانات');
 });
@@ -1195,8 +1223,8 @@ document.getElementById('endVisitBtn').addEventListener('click', async ()=>{
   if(state.id) await dbPut(snapshotVisit());
   // start a fresh visit
   await startNewVisit();
-  state.photos=[]; state.violations=[];
-  renderThumbs(); renderChosenViolations(); resetChatFresh(); renderExportTab();
+  state.photos=[];
+  renderThumbs(); resetChatFresh(); renderExportTab();
   toast('تم إنهاء الزيارة وبدء زيارة جديدة');
 });
 
@@ -1217,7 +1245,7 @@ async function renderArchive(){
         <span class="title">${a.contractor || 'بدون اسم'} — ${a.workOrder || '—'} ${statusLabel}</span>
         <span class="meta">${a.date || ''} ${a.time || ''}</span>
       </div>
-      <div class="meta">${a.location || ''} · ${(v.photos||[]).length} صور · ${(v.violations||[]).length} مخالفات</div>
+      <div class="meta">${a.location || ''} · ${(v.photos||[]).length} صور · ${parseNotes(a.notesRaw).points.length} ملاحظات</div>
       <div class="actions">
         <button class="btn secondary small open-btn" data-id="${v.id}">فتح الزيارة</button>
         <button class="btn secondary small copy-btn" data-id="${v.id}">نسخ النص</button>
@@ -1233,7 +1261,7 @@ async function renderArchive(){
     if(state.id) await dbPut(snapshotVisit());
     loadVisitIntoState(v);
     try{ localStorage.setItem(CURRENT_ID_KEY, state.id); }catch(_){}
-    renderThumbs(); renderChosenViolations(); startChat(); renderExportTab();
+    renderThumbs(); startChat(); renderExportTab();
     // jump to camera tab
     document.querySelector('nav.tabs button[data-tab="camera"]').click();
     toast('تم فتح الزيارة — كل شي تضيفه ينحفظ فيها');
@@ -1247,7 +1275,7 @@ async function renderArchive(){
     const id = e.target.dataset.id;
     if(!confirm('حذف هذه الزيارة من الأرشيف؟')) return;
     await dbDelete(id);
-    if(id === state.id){ await startNewVisit(); state.photos=[]; state.violations=[]; renderThumbs(); renderChosenViolations(); resetChatFresh(); renderExportTab(); }
+    if(id === state.id){ await startNewVisit(); state.photos=[]; renderThumbs(); resetChatFresh(); renderExportTab(); }
     renderArchive();
     toast('تم الحذف');
   }));
@@ -1257,8 +1285,8 @@ document.getElementById('clearArchiveBtn').addEventListener('click', async ()=>{
   if(!confirm('هل أنت متأكد؟ راح يتم حذف كل الزيارات المحفوظة نهائيًا.')) return;
   await dbClear();
   await startNewVisit();
-  state.photos=[]; state.violations=[];
-  renderThumbs(); renderChosenViolations(); resetChatFresh(); renderExportTab();
+  state.photos=[];
+  renderThumbs(); resetChatFresh(); renderExportTab();
   renderArchive();
   toast('تم مسح الأرشيف بالكامل');
 });
@@ -1266,7 +1294,7 @@ document.getElementById('clearArchiveBtn').addEventListener('click', async ()=>{
 document.getElementById('exportExcelBtn').addEventListener('click', async ()=>{
   const list = (await dbGetAll()).sort((a,b)=>(a.updatedAt||0)-(b.updatedAt||0));
   if(!list.length){ toast('لا توجد زيارات محفوظة'); return; }
-  const headers = ["رقم","الاستشاري ","منفذ الزيارة","تاريخ الزيارة","الحي","المقاول ","رقم امر العمل ","المصدر","المستلم","رقم التصريح","نوع العمل ","الملاحظة ","ورشه توعويه ","إيقاف العمل  "];
+  const headers = ["رقم","الاستشاري ","منفذ الزيارة","تاريخ الزيارة","الحي","المقاول ","رقم امر العمل ","المصدر","المستلم","رقم التصريح","نوع العمل ","الملاحظة "," الورش التوعوية","ايقاف العمل "];
   const rows = list.map((v,i)=>{
     const a = v.article || {};
     // detect stop-work from the notes text
@@ -1280,7 +1308,7 @@ document.getElementById('exportExcelBtn').addEventListener('click', async ()=>{
   const today = formatDateEN(new Date()).replace(/\//g,'-');
   const sheetName = `الزيارات اليومية ${today}`.slice(0,31);
   XLSX.utils.book_append_sheet(wb, ws, sheetName);
-  XLSX.writeFile(wb, "زيارات-الأرشيف.xlsx");
+  XLSX.writeFile(wb, `زيارات اليوم ${today}.xlsx`);
   toast('تم تنزيل ملف الإكسل');
 });
 
@@ -1317,7 +1345,6 @@ function toast(msg){
     state.id = 'v' + Date.now();
   }
   renderThumbs();
-  renderChosenViolations();
   startChat();
   renderExportTab();
   // build thumbnails for any older photos that don't have one yet
