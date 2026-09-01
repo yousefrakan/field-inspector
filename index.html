@@ -16,6 +16,7 @@
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/exceljs/4.4.0/exceljs.min.js"></script>
 <style>
   :root{
     --asphalt:#1B1E20;
@@ -1151,11 +1152,8 @@ document.getElementById('exportAllFollowupBtn').addEventListener('click', async 
 
   if(!rows.length){ toast('لا توجد ملاحظات بأرقام زيارات لتصديرها'); return; }
 
-  const ws = XLSX.utils.aoa_to_sheet([headers, ...rows]);
-  const wb = XLSX.utils.book_new();
   const today = formatDateEN(new Date()).replace(/\//g,'-');
-  XLSX.utils.book_append_sheet(wb, ws, `متابعة الملاحظات ${today}`.slice(0,31));
-  XLSX.writeFile(wb, `متابعة الملاحظات ${today}.xlsx`);
+  await writeStyledXlsx(headers, rows, `متابعة الملاحظات ${today}`, `متابعة الملاحظات ${today}.xlsx`);
   toast(skipped ? `تم التنزيل — ${skipped} زيارة بدون رقم لم تُدرج` : 'تم تنزيل ملف متابعة الملاحظات');
 });
 
@@ -1387,12 +1385,8 @@ document.getElementById('exportExcelBtn').addEventListener('click', async ()=>{
     const workshop = a.workshopDone === "نعم" ? "نعم" : (a.workshopDone === "لا" ? "لا" : "");
     return [ i+1, "التصميم الفني", a.executor||"", a.date||"", a.location||"", a.contractor||"", a.workOrder||"", a.source||"", a.receiver||"", a.permitNum||"", a.workType||"", "", workshop, stopWork ];
   });
-  const ws = XLSX.utils.aoa_to_sheet([headers, ...rows]);
-  const wb = XLSX.utils.book_new();
   const today = formatDateEN(new Date()).replace(/\//g,'-');
-  const sheetName = `الزيارات اليومية ${today}`.slice(0,31);
-  XLSX.utils.book_append_sheet(wb, ws, sheetName);
-  XLSX.writeFile(wb, `زيارات اليوم ${today}.xlsx`);
+  await writeStyledXlsx(headers, rows, `الزيارات اليومية ${today}`, `زيارات اليوم ${today}.xlsx`);
   toast('تم تنزيل ملف الإكسل');
 });
 
@@ -1474,6 +1468,45 @@ document.getElementById('purgePhotosBtn').addEventListener('click', async ()=>{
   renderArchive();
   renderStorageInfo();
 });
+
+// Writes an .xlsx where every cell is centred (H+V), borderless and unfilled,
+// so copying rows into the shared master file doesn't carry stray formatting over.
+async function writeStyledXlsx(headers, rows, sheetName, fileName){
+  const wb = new ExcelJS.Workbook();
+  const ws = wb.addWorksheet(sheetName.slice(0,31), {
+    views: [{ rightToLeft: true }]
+  });
+
+  ws.addRow(headers);
+  rows.forEach(r => ws.addRow(r));
+
+  ws.eachRow((row)=>{
+    row.height = 20;
+    row.eachCell({ includeEmpty: true }, (cell)=>{
+      cell.alignment = { horizontal: 'center', vertical: 'middle', wrapText: false, readingOrder: 'rtl' };
+      cell.font = { name: 'Arial', size: 12 };
+      cell.border = undefined;   // no borders -> nothing to overwrite the master's own
+      cell.fill  = undefined;    // no background fill
+    });
+  });
+
+  // sensible column widths
+  ws.columns.forEach((col, i)=>{
+    const header = String(headers[i] || '');
+    let max = header.length;
+    rows.forEach(r=>{ const v = r[i] == null ? '' : String(r[i]); if(v.length > max) max = v.length; });
+    col.width = Math.min(Math.max(max + 4, 10), 42);
+  });
+
+  const buf = await wb.xlsx.writeBuffer();
+  const blob = new Blob([buf], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = fileName;
+  link.click();
+  setTimeout(()=> URL.revokeObjectURL(url), 3000);
+}
 
 // ---------- Lightbox ----------
 function openLightbox(src){
