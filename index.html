@@ -320,6 +320,37 @@
     </div>
   </div>
   <div class="panel">
+    <h2>مساحة التخزين</h2>
+    <div id="storageInfo">
+      <div class="kv"><span>المستخدم حاليًا</span><span id="stUsed">—</span></div>
+      <div class="kv"><span>المتاح تقريبًا</span><span id="stQuota">—</span></div>
+      <div class="kv"><span>عدد الزيارات المحفوظة</span><span id="stVisits">—</span></div>
+      <div class="kv"><span>عدد الصور المحفوظة</span><span id="stPhotos">—</span></div>
+      <div class="kv"><span>حماية من الحذف التلقائي</span><span id="stPersist">—</span></div>
+    </div>
+    <div style="background:var(--asphalt); border:1px solid var(--line); border-radius:20px; height:12px; margin-top:12px; overflow:hidden;">
+      <div id="stBar" style="height:100%; width:0%; background:var(--hazard);"></div>
+    </div>
+    <div class="sub" id="stHint" style="color:var(--ink-dim); font-size:11.5px; margin-top:9px;"></div>
+  </div>
+
+  <div class="panel">
+    <h2>تفريغ الصور القديمة</h2>
+    <div class="sub" style="color:var(--ink-dim); font-size:12px; margin-bottom:10px;">
+      يحذف صور الزيارات المنتهية الأقدم من المدة المحددة، ويُبقي كل البيانات النصية (المقال والملاحظات) كما هي.
+    </div>
+    <label>احذف صور الزيارات الأقدم من</label>
+    <select id="purgeAge">
+      <option value="7">أسبوع</option>
+      <option value="14">أسبوعين</option>
+      <option value="30" selected>شهر</option>
+      <option value="60">شهرين</option>
+      <option value="90">ثلاثة أشهر</option>
+    </select>
+    <button class="btn secondary" style="margin-top:10px;" id="purgePhotosBtn">تفريغ صور الزيارات القديمة</button>
+  </div>
+
+  <div class="panel">
     <h2>مسح الأرشيف</h2>
     <button class="btn danger" id="clearArchiveBtn">مسح كل الزيارات المحفوظة</button>
   </div>
@@ -519,7 +550,7 @@ document.getElementById('tabs').addEventListener('click', (e)=>{
   document.getElementById('tab-'+btn.dataset.tab).style.display='block';
   if(btn.dataset.tab==='followup') renderFollowup();
   if(btn.dataset.tab==='export') renderExportTab();
-  if(btn.dataset.tab==='archive') renderArchive();
+  if(btn.dataset.tab==='archive'){ renderArchive(); renderStorageInfo(); }
 });
 
 // ---------- Camera ----------
@@ -1365,6 +1396,85 @@ document.getElementById('exportExcelBtn').addEventListener('click', async ()=>{
   toast('تم تنزيل ملف الإكسل');
 });
 
+// ---------- Storage reporting & maintenance ----------
+function fmtBytes(b){
+  if(!b && b !== 0) return '—';
+  if(b < 1024*1024) return (b/1024).toFixed(0) + ' KB';
+  if(b < 1024*1024*1024) return (b/1024/1024).toFixed(1) + ' MB';
+  return (b/1024/1024/1024).toFixed(2) + ' GB';
+}
+// Ask the browser to keep our data instead of evicting it when space runs low
+async function requestPersistence(){
+  try{
+    if(navigator.storage && navigator.storage.persist){
+      const already = await navigator.storage.persisted();
+      if(already) return true;
+      return await navigator.storage.persist();
+    }
+  }catch(e){}
+  return false;
+}
+async function renderStorageInfo(){
+  const list = await dbGetAll();
+  const photoCount = list.reduce((n,v)=> n + ((v.photos||[]).length), 0);
+  document.getElementById('stVisits').textContent = list.length;
+  document.getElementById('stPhotos').textContent = photoCount;
+
+  let used = null, quota = null;
+  try{
+    if(navigator.storage && navigator.storage.estimate){
+      const est = await navigator.storage.estimate();
+      used = est.usage; quota = est.quota;
+    }
+  }catch(e){}
+
+  document.getElementById('stUsed').textContent  = fmtBytes(used);
+  document.getElementById('stQuota').textContent = fmtBytes(quota);
+
+  let pct = 0;
+  if(used != null && quota) pct = Math.min(100, (used/quota)*100);
+  const bar = document.getElementById('stBar');
+  bar.style.width = pct.toFixed(1) + '%';
+  bar.style.background = pct > 85 ? '#E8590C' : (pct > 65 ? '#F2B705' : '#5C8AA6');
+
+  let persisted = false;
+  try{ persisted = navigator.storage && navigator.storage.persisted ? await navigator.storage.persisted() : false; }catch(e){}
+  document.getElementById('stPersist').textContent = persisted ? 'مفعّلة ✅' : 'غير مفعّلة';
+
+  const hint = document.getElementById('stHint');
+  if(used != null && quota){
+    const remainMb = (quota - used)/1024/1024;
+    const approxVisits = Math.floor(remainMb / 22); // ~22MB per 10-photo visit
+    hint.textContent = `المتبقي يكفي تقريبًا لـ ${approxVisits} زيارة إضافية (بمعدل ١٠ صور للزيارة).`
+      + (persisted ? '' : ' يُنصح بإبقاء التطبيق مثبتًا على الشاشة الرئيسية لتقليل احتمال حذف البيانات.');
+  } else {
+    hint.textContent = 'المتصفح لا يوفّر تفاصيل المساحة على هذا الجهاز.';
+  }
+}
+
+document.getElementById('purgePhotosBtn').addEventListener('click', async ()=>{
+  const days = parseInt(document.getElementById('purgeAge').value);
+  const cutoff = Date.now() - days*24*60*60*1000;
+  const list = await dbGetAll();
+  const targets = list.filter(v =>
+    v.id !== state.id &&                  // never touch the visit in progress
+    v.status === 'closed' &&              // only finished visits
+    (v.updatedAt || 0) < cutoff &&
+    (v.photos || []).length > 0
+  );
+  if(!targets.length){ toast('لا توجد زيارات قديمة بصور لحذفها'); return; }
+  const photoTotal = targets.reduce((n,v)=> n + v.photos.length, 0);
+  if(!confirm(`سيتم حذف ${photoTotal} صورة من ${targets.length} زيارة منتهية، مع الإبقاء على بياناتها النصية. متابعة؟`)) return;
+
+  for(const v of targets){
+    v.photos = [];
+    await dbPut(v);
+  }
+  toast(`تم حذف ${photoTotal} صورة`);
+  renderArchive();
+  renderStorageInfo();
+});
+
 // ---------- Lightbox ----------
 function openLightbox(src){
   const lb = document.createElement('div');
@@ -1383,6 +1493,7 @@ function toast(msg){
 }
 // ---------- Init: resume current visit or start a new one ----------
 (async function init(){
+  requestPersistence();   // ask the browser not to evict our data
   try{
     let currentId = null;
     try{ currentId = localStorage.getItem(CURRENT_ID_KEY); }catch(e){}
