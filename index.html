@@ -1480,13 +1480,14 @@ async function writeStyledXlsx(headers, rows, sheetName, fileName){
   ws.addRow(headers);
   rows.forEach(r => ws.addRow(r));
 
+  const NO_BORDER = { top:{style:undefined}, left:{style:undefined}, bottom:{style:undefined}, right:{style:undefined} };
   ws.eachRow((row)=>{
     row.height = 20;
     row.eachCell({ includeEmpty: true }, (cell)=>{
       cell.alignment = { horizontal: 'center', vertical: 'middle', wrapText: false, readingOrder: 'rtl' };
-      cell.font = { name: 'Arial', size: 12 };
-      cell.border = undefined;   // no borders -> nothing to overwrite the master's own
-      cell.fill  = undefined;    // no background fill
+      cell.font = { name: 'Arial', size: 12, color: { argb: 'FF000000' } };
+      cell.border = NO_BORDER;                       // explicitly no borders on any side
+      cell.fill = { type: 'pattern', pattern: 'none' }; // explicitly no background fill
     });
   });
 
