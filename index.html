@@ -88,6 +88,13 @@
     position:absolute; top:10px; left:10px; right:10px; background:rgba(0,0,0,.6);
     padding:8px 10px; border-radius:6px; font-size:12px; color:var(--ink); text-align:center;
   }
+  .flashBtn{
+    position:absolute; bottom:22px; right:14px; padding:9px 13px; border-radius:20px;
+    background:rgba(0,0,0,.55); border:1px solid rgba(255,255,255,.25); color:#fff;
+    font-family:inherit; font-size:12.5px; font-weight:600; cursor:pointer;
+  }
+  .flashBtn.on{ background:var(--hazard); color:var(--asphalt); border-color:var(--hazard); }
+  .flashBtn.hidden{ display:none; }
   .shutter{
     position:absolute; bottom:14px; left:50%; transform:translateX(-50%);
     width:64px; height:64px; border-radius:50%; background:var(--hazard); border:4px solid var(--asphalt-2);
@@ -184,8 +191,8 @@
 <nav class="tabs" id="tabs">
   <button data-tab="camera" class="active">📷 تصوير</button>
   <button data-tab="chat">📝 المقال</button>
-  <button data-tab="followup">📋 متابعة الملاحظات</button>
   <button data-tab="export">📦 التصدير</button>
+  <button data-tab="followup">📋 متابعة الملاحظات</button>
   <button data-tab="archive">🗄️ الأرشيف</button>
 </nav>
 
@@ -199,6 +206,7 @@
       <video id="video" autoplay playsinline muted></video>
       <canvas id="captureCanvas" class="captureCanvas" style="display:none;"></canvas>
       <div class="overlay-hint" id="camHint">اضغط للسماح بالوصول للكاميرا والموقع</div>
+      <button class="flashBtn" id="flashBtn" title="الفلاش">⚡ الفلاش</button>
       <button class="shutter" id="shutterBtn" title="التقاط"></button>
     </div>
     <label style="margin-top:14px;">تصنيف الصورة التالية</label>
@@ -241,30 +249,6 @@
   </div>
 </section>
 
-<!-- FOLLOW-UP TAB -->
-<section id="tab-followup" style="display:none;">
-  <div class="panel">
-    <h2>متابعة الملاحظات</h2>
-    <div class="sub" style="color:var(--ink-dim); font-size:12px; margin-bottom:10px;">
-      أدخل رقم الزيارة (من ملف متابعة الزيارات اليومية)، وسيتم توليد ملف إكسل بكل ملاحظات هذه الزيارة، كل ملاحظة بصف مستقل.
-    </div>
-    <label>رقم الزيارة</label>
-    <div style="display:flex; gap:8px;">
-      <input id="visitNumInput" type="text" placeholder="مثال: SV-4413">
-      <button class="btn small" id="saveVisitNumBtn" style="width:auto;">حفظ</button>
-    </div>
-    <div id="visitNumStatus" class="meta" style="color:var(--ink-dim); font-size:12px; margin-top:8px;"></div>
-  </div>
-  <div class="panel">
-    <h2>ملاحظات هذه الزيارة</h2>
-    <div id="followupPreview"></div>
-  </div>
-  <div class="panel">
-    <h2>تصدير</h2>
-    <button class="btn" id="exportFollowupBtn">تنزيل ملف متابعة الملاحظات (إكسل)</button>
-  </div>
-</section>
-
 <!-- EXPORT TAB -->
 <section id="tab-export" style="display:none;">
   <div class="panel">
@@ -300,6 +284,26 @@
   </div>
 </section>
 
+<!-- FOLLOW-UP TAB -->
+<section id="tab-followup" style="display:none;">
+  <div class="panel">
+    <h2>متابعة الملاحظات</h2>
+    <div class="sub" style="color:var(--ink-dim); font-size:12px; margin-bottom:10px;">
+      أدخل رقم الزيارة (من ملف متابعة الزيارات اليومية). تنزيل ملف المتابعة لكل الزيارات يتم من تبويب الأرشيف.
+    </div>
+    <label>رقم الزيارة</label>
+    <div style="display:flex; gap:8px;">
+      <input id="visitNumInput" type="text" placeholder="مثال: SV-4413">
+      <button class="btn small" id="saveVisitNumBtn" style="width:auto;">حفظ</button>
+    </div>
+    <div id="visitNumStatus" class="meta" style="color:var(--ink-dim); font-size:12px; margin-top:8px;"></div>
+  </div>
+  <div class="panel">
+    <h2>ملاحظات هذه الزيارة</h2>
+    <div id="followupPreview"></div>
+  </div>
+</section>
+
 <!-- ARCHIVE TAB -->
 <section id="tab-archive" style="display:none;">
   <div class="panel">
@@ -309,7 +313,11 @@
   </div>
   <div class="panel">
     <h2>تصدير الأرشيف لإكسل</h2>
-    <button class="btn" id="exportExcelBtn">تنزيل ملف إكسل لكل الزيارات المحفوظة</button>
+    <button class="btn" id="exportExcelBtn">تنزيل ملف زيارات اليوم (كل الزيارات)</button>
+    <button class="btn secondary" style="margin-top:10px;" id="exportAllFollowupBtn">تنزيل ملف متابعة الملاحظات (كل الزيارات)</button>
+    <div class="sub" style="color:var(--ink-dim); font-size:11.5px; margin-top:9px;">
+      ملف المتابعة يشمل ملاحظات كل زيارة أُدخل لها رقم زيارة، مرتّبة بالتسلسل.
+    </div>
   </div>
   <div class="panel">
     <h2>مسح الأرشيف</h2>
@@ -522,6 +530,7 @@ logoImg.src = LOGO_SRC;
 async function initCamera(){
   try{
     stream = await navigator.mediaDevices.getUserMedia({video:{facingMode:'environment', width:{ideal:3840}, height:{ideal:2160}}, audio:false});
+    setupFlash(stream);
     document.getElementById('video').srcObject = stream;
     document.getElementById('camHint').textContent = 'جاري تحديد الموقع...';
   }catch(err){
@@ -695,6 +704,36 @@ document.getElementById('galleryInput').addEventListener('change', async (e)=>{
   renderThumbs();
   autosave();
   toast('تمت إضافة الصور');
+});
+
+// ---------- Flash / torch ----------
+let torchTrack = null, torchOn = false;
+function setupFlash(stream){
+  const btn = document.getElementById('flashBtn');
+  try{
+    const track = stream.getVideoTracks()[0];
+    const caps = track.getCapabilities ? track.getCapabilities() : {};
+    if(caps && caps.torch){
+      torchTrack = track;
+      btn.classList.remove('hidden');
+    } else {
+      btn.classList.add('hidden');   // device/browser doesn't expose the flash
+    }
+  }catch(e){
+    document.getElementById('flashBtn').classList.add('hidden');
+  }
+}
+document.getElementById('flashBtn').addEventListener('click', async ()=>{
+  if(!torchTrack){ toast('الفلاش غير مدعوم على هذا الجهاز'); return; }
+  torchOn = !torchOn;
+  try{
+    await torchTrack.applyConstraints({ advanced: [{ torch: torchOn }] });
+    document.getElementById('flashBtn').classList.toggle('on', torchOn);
+  }catch(e){
+    torchOn = false;
+    document.getElementById('flashBtn').classList.remove('on');
+    toast('تعذّر تشغيل الفلاش');
+  }
 });
 
 // Small preview version used only for on-screen lists (full image kept for PDF/download)
@@ -1042,37 +1081,51 @@ document.getElementById('saveVisitNumBtn').addEventListener('click', ()=>{
   toast(val ? 'تم حفظ رقم الزيارة' : 'تم مسح رقم الزيارة');
 });
 
-document.getElementById('exportFollowupBtn').addEventListener('click', ()=>{
-  const a = state.article;
-  if(!a.visitNum){ toast('أدخل رقم الزيارة أولاً'); return; }
-  const parsed = parseNotes(a.notesRaw);
-  if(!parsed.points.length){ toast('لا توجد ملاحظات لتصديرها'); return; }
+// Exports follow-up notes for ALL archived visits that have a visit number
+document.getElementById('exportAllFollowupBtn').addEventListener('click', async ()=>{
+  // make sure the current visit's latest state is stored before reading the DB
+  if(state.id) await dbPut(snapshotVisit());
+  const list = (await dbGetAll()).sort((a,b)=>(a.updatedAt||0)-(b.updatedAt||0));
 
   const headers = ["رقم الزيارة ","رقم الملاحظة","منفذ الزيارة","تاريخ الزيارة","الحي","المقاول ","رقم امر العمل ","نوع العمل ","الملاحظة ","Non Compliance to Life Saving Rules ","الإجراء التصحيحي","التاريخ المستهدف للاغلاق","حالة الملاحظة","الملاحظات"];
-  // date format with dashes, e.g. 31-08-2026
-  const visitDate = (a.date || '').replace(/\//g,'-');
-  const rows = parsed.points.map((p,i)=>[
-    a.visitNum,
-    `${a.visitNum}-${String(i+1).padStart(2,'0')}`,
-    a.executor || "",
-    visitDate,
-    a.location || "",
-    a.contractor || "",
-    a.workOrder || "",
-    a.workType || "",
-    p.closed ? `${p.text} (تم التعديل)` : p.text,
-    "",                       // Non Compliance — always blank
-    "",                       // الإجراء التصحيحي — filled manually
-    visitDate,                // التاريخ المستهدف للاغلاق = visit date
-    p.closed ? "مغلقة" : "",  // حالة الملاحظة
-    ""                        // الملاحظات — always blank
-  ]);
+  const rows = [];
+  let skipped = 0;
+  list.forEach(v=>{
+    const a = v.article || {};
+    const parsed = parseNotes(a.notesRaw);
+    if(!a.visitNum || !parsed.points.length){
+      if(parsed.points.length && !a.visitNum) skipped++;
+      return;
+    }
+    const visitDate = (a.date || '').replace(/\//g,'-');
+    parsed.points.forEach((p,i)=>{
+      rows.push([
+        a.visitNum,
+        `${a.visitNum}-${String(i+1).padStart(2,'0')}`,
+        a.executor || "",
+        visitDate,
+        a.location || "",
+        a.contractor || "",
+        a.workOrder || "",
+        a.workType || "",
+        p.closed ? `${p.text} (تم التعديل)` : p.text,
+        "",                       // Non Compliance — always blank
+        "",                       // الإجراء التصحيحي — filled manually
+        visitDate,                // التاريخ المستهدف للاغلاق = visit date
+        p.closed ? "مغلقة" : "",  // حالة الملاحظة
+        ""                        // الملاحظات — always blank
+      ]);
+    });
+  });
+
+  if(!rows.length){ toast('لا توجد ملاحظات بأرقام زيارات لتصديرها'); return; }
+
   const ws = XLSX.utils.aoa_to_sheet([headers, ...rows]);
   const wb = XLSX.utils.book_new();
   const today = formatDateEN(new Date()).replace(/\//g,'-');
-  XLSX.utils.book_append_sheet(wb, ws, `الزيارات اليومية ${today}`.slice(0,31));
-  XLSX.writeFile(wb, `متابعة الملاحظات ${a.visitNum}.xlsx`);
-  toast('تم تنزيل ملف متابعة الملاحظات');
+  XLSX.utils.book_append_sheet(wb, ws, `متابعة الملاحظات ${today}`.slice(0,31));
+  XLSX.writeFile(wb, `متابعة الملاحظات ${today}.xlsx`);
+  toast(skipped ? `تم التنزيل — ${skipped} زيارة بدون رقم لم تُدرج` : 'تم تنزيل ملف متابعة الملاحظات');
 });
 
 // ---------- Export tab ----------
