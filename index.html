@@ -145,6 +145,15 @@
     background:var(--panel); border:1px solid var(--line); color:var(--ink); font-size:18px; cursor:pointer;
   }
 
+  .ansRow{
+    display:flex; align-items:center; gap:10px; padding:9px 11px; margin-bottom:7px;
+    background:var(--asphalt); border:1px solid var(--line); border-radius:8px; cursor:pointer;
+  }
+  .ansRow:active{ border-color:var(--hazard); }
+  .ansRow .lbl{ color:var(--ink-dim); font-size:11.5px; min-width:105px; }
+  .ansRow .val{ flex:1; color:var(--ink); font-size:13px; font-weight:600; }
+  .ansRow .edit{ color:var(--hazard); font-size:12px; }
+  .ansRow.editing{ border-color:var(--hazard); background:#33383a; }
   .chatlog{display:flex; flex-direction:column; gap:10px; max-height:340px; overflow-y:auto; padding-bottom:6px;}
   .bubble{padding:10px 13px; border-radius:10px; font-size:13.5px; line-height:1.6; max-width:88%;}
   .bubble.bot{background:var(--asphalt); border:1px solid var(--line); align-self:flex-start;}
@@ -212,7 +221,7 @@
     </div>
     <label style="margin-top:14px;">تصنيف الصورة التالية</label>
     <select id="photoTag">
-      <option value="site">سيارة/موقع عام</option>
+      <option value="site">موقع عام</option>
       <option value="violation">ملاحظة/مخالفة</option>
       <option value="checklist">قائمة الفحص</option>
       <option value="workshop">ورشة توعوية</option>
@@ -242,6 +251,11 @@
     <button class="btn secondary" style="margin-top:12px;" id="chatRestart">إعادة تعبئة المقال من البداية</button>
   </div>
 
+  <div class="panel" id="answersPanel" style="display:none;">
+    <h2>الإجابات — اضغط أي حقل لتعديله</h2>
+    <div id="answersList"></div>
+  </div>
+
   <div class="panel" id="articlePreviewPanel" style="display:none;">
     <h2>المقال الجاهز</h2>
     <div class="sub" style="color:var(--ink-dim); font-size:12px; margin-bottom:8px;">تقدر تعدّل النص يدويًا قبل النسخ.</div>
@@ -265,14 +279,6 @@
     <button class="btn secondary" style="margin-top:10px;" id="pdfViolations">تحميل PDF — الملاحظات فقط</button>
     <button class="btn secondary" style="margin-top:10px;" id="pdfChecklist">تحميل PDF — قائمة الفحص</button>
     <button class="btn secondary" style="margin-top:10px;" id="pdfWorkshop">تحميل PDF — ورشة توعوية</button>
-  </div>
-
-  <div class="panel">
-    <h2>حزمة بيانات الزيارة</h2>
-    <div class="sub" style="color:var(--ink-dim); font-size:12px; margin-bottom:10px;">
-      ملف نصي يلخص كل بيانات الزيارة والملاحظات، تقدر تنسخه وتستخدمه بأي مكان.
-    </div>
-    <button class="btn" id="exportPackage">تنزيل حزمة بيانات الزيارة (.txt)</button>
   </div>
 
   <div class="panel">
@@ -496,18 +502,18 @@ function formatDateEN(d){
 }
 
 const chatFlow = [
-  {key:"contractor", q:"وش اسم المقاول؟"},
-  {key:"location", q:"الموقع (الحي)؟"},
-  {key:"workType", q:"نوع العمل المنفذ؟"},
-  {key:"workCategory", q:"العمل طوارئ ولا إنشاءات؟", options:["طوارئ","إنشاءات"]},
-  {key:"office", q:"المكتب: شمال ولا خريص؟", options:["شمال","خريص"], skipIf:(a)=> a.workCategory==="إنشاءات"},
-  {key:"workOrder", q:"رقم أمر العمل؟"},
-  {key:"receiver", q:"اسم المستلم؟"},
-  {key:"source", q:"اسم المصدر؟"},
-  {key:"executor", q:"اسم منفذ الزيارة؟"},
-  {key:"notesRaw", q:"أي ملاحظات على الزيارة؟ احكيها لي عادي بدون ترقيم (أو اكتب \"لا يوجد\" إن ما فيه ملاحظات). لو تم إيقاف العمل، اذكر ذلك أول كلامك."},
-  {key:"permitNum", q:"رقم التصريح؟"},
-  {key:"workshopDone", q:"هل تم عمل ورشة توعوية؟", options:["نعم","لا"]},
+  {key:"contractor",   label:"المقاول",        q:"وش اسم المقاول؟"},
+  {key:"location",     label:"الحي",           q:"الموقع (الحي)؟"},
+  {key:"workType",     label:"نوع العمل",      q:"نوع العمل المنفذ؟"},
+  {key:"workCategory", label:"التصنيف",        q:"نوع العمل: طوارئ / إنشاءات / عمليات وصيانة؟", options:["طوارئ","إنشاءات","عمليات وصيانة"]},
+  {key:"office",       label:"المكتب",         q:"المكتب: شمال ولا خريص؟", options:["شمال","خريص"], skipIf:(a)=> a.workCategory==="إنشاءات"},
+  {key:"workOrder",    label:"رقم أمر العمل",  q:"رقم أمر العمل؟"},
+  {key:"receiver",     label:"المستلم",        q:"اسم المستلم؟"},
+  {key:"source",       label:"المصدر",         q:"اسم المصدر؟"},
+  {key:"executor",     label:"منفذ الزيارة",   q:"اسم منفذ الزيارة؟"},
+  {key:"notesRaw",     label:"الملاحظات",      q:"أي ملاحظات على الزيارة؟ احكيها لي عادي بدون ترقيم (أو اكتب \"لا يوجد\" إن ما فيه ملاحظات). لو تم إيقاف العمل، اذكر ذلك أول كلامك."},
+  {key:"permitNum",    label:"رقم التصريح",    q:"رقم التصريح؟"},
+  {key:"workshopDone", label:"ورشة توعوية",    q:"هل تم عمل ورشة توعوية؟", options:["نعم","لا"]},
 ];
 
 // Splits free-form notes text into bullet points, detects stop-work and (تم التعديل) tags
@@ -904,6 +910,70 @@ function setupSortDrag(g){
 document.getElementById('sortToggleBtn').addEventListener('click', ()=> toggleSortMode(true));
 document.getElementById('sortDoneBtn').addEventListener('click', ()=> toggleSortMode(false));
 
+// ---------- Editable answers ----------
+let editingKey = null;   // when set, the next submitted answer overwrites this field only
+
+function renderAnswers(){
+  const panel = document.getElementById('answersPanel');
+  const list  = document.getElementById('answersList');
+  const answered = chatFlow.filter((st, i) =>
+    (i < state.chatStep || state.chatDone) &&
+    !(st.skipIf && st.skipIf(state.article)) &&
+    (state.article[st.key] || '').toString().trim() !== ''
+  );
+  if(!answered.length){ panel.style.display='none'; list.innerHTML=''; return; }
+  panel.style.display='block';
+  list.innerHTML = answered.map(st=>{
+    const v = String(state.article[st.key]);
+    const short = v.length > 60 ? v.slice(0,60)+'…' : v;
+    return `<div class="ansRow ${editingKey===st.key?'editing':''}" data-key="${st.key}">
+      <span class="lbl">${st.label || st.q.replace(/[؟?].*$/,'')}</span>
+      <span class="val">${short}</span>
+      <span class="edit">✎</span>
+    </div>`;
+  }).join('');
+  list.querySelectorAll('.ansRow').forEach(r=>r.addEventListener('click', ()=> beginEdit(r.dataset.key)));
+}
+
+function beginEdit(key){
+  const step = chatFlow.find(s=>s.key===key);
+  if(!step) return;
+  editingKey = key;
+  renderAnswers();
+  chatBubble(`تعديل: ${step.label || step.q}`, 'bot');
+  if(step.options){
+    renderOptions(step);
+    document.getElementById('chatInput').parentElement.style.display='none';
+  } else {
+    clearOptions();
+    const row = document.getElementById('chatInput').parentElement;
+    row.style.display='';
+    const input = document.getElementById('chatInput');
+    input.value = state.article[key] || '';
+    input.focus();
+  }
+}
+
+function finishEdit(val){
+  const key = editingKey;
+  state.article[key] = val;
+  editingKey = null;
+  if(key === 'workCategory' && state.article.workCategory === 'إنشاءات'){
+    state.article.office = 'خريص';
+  }
+  chatBubble('تم التعديل.', 'bot');
+  renderAnswers();
+  if(state.chatDone){
+    renderArticle();
+    clearOptions();
+    document.getElementById('chatInput').parentElement.style.display='';
+  } else {
+    updateChatInputMode();
+    setTimeout(()=> chatBubble(chatFlow[state.chatStep].q, 'bot'), 150);
+  }
+  autosave();
+}
+
 // ---------- Chat article builder ----------
 function chatBubble(text, who){
   const div = document.createElement('div');
@@ -936,6 +1006,7 @@ function clearOptions(){
 }
 // Toggle the free-text input vs option buttons based on the current step
 function updateChatInputMode(){
+  if(editingKey) return;   // an edit is in progress; leave the input as-is
   const step = chatFlow[state.chatStep];
   const inputRow = document.getElementById('chatInput').parentElement;
   if(step && step.options){
@@ -975,8 +1046,9 @@ function finishArticle(){
   clearOptions();
   document.getElementById('chatInput').parentElement.style.display='';
   setTimeout(()=>{
-    chatBubble('تم! جهزت المقال كامل — تقدر تشوفه تحت وتعدله وتنسخه.', 'bot');
+    chatBubble('تم! جهزت المقال كامل — تقدر تعدّل أي حقل من قائمة الإجابات فوق.', 'bot');
     renderArticle();
+    renderAnswers();
     autosave();
   }, 200);
 }
@@ -988,7 +1060,8 @@ function startChat(){
     document.getElementById('chatInput').parentElement.style.display='';
     renderArticle();
     if(state.savedArticleText){ document.getElementById('articleText').value = state.savedArticleText; }
-    chatBubble('المقال محفوظ لهذه الزيارة. تقدر تشوفه تحت أو تعيد تعبئته من الزر.', 'bot');
+    chatBubble('المقال محفوظ لهذه الزيارة. تقدر تعدّل أي حقل من قائمة الإجابات فوق.', 'bot');
+    renderAnswers();
     return;
   }
   if(state.chatStep > 0){
@@ -999,10 +1072,12 @@ function startChat(){
     }
     chatBubble(chatFlow[state.chatStep].q, 'bot');
     updateChatInputMode();
+    renderAnswers();
     return;
   }
   chatBubble('يلا نبدأ تجهيز المقال. '+chatFlow[0].q, 'bot');
   updateChatInputMode();
+  renderAnswers();
 }
 function resetChatFresh(){
   document.getElementById('chatlog').innerHTML='';
@@ -1013,8 +1088,10 @@ function resetChatFresh(){
   state.article = blankArticle();
   state.savedArticleText = '';
   document.getElementById('articlePreviewPanel').style.display='none';
+  editingKey = null;
   chatBubble('يلا نبدأ تجهيز المقال. '+chatFlow[0].q, 'bot');
   updateChatInputMode();
+  renderAnswers();
 }
 document.getElementById('chatSend').addEventListener('click', ()=>{
   const input = document.getElementById('chatInput');
@@ -1027,13 +1104,15 @@ document.getElementById('chatInput').addEventListener('keydown', e=>{
   if(e.key==='Enter'){ e.preventDefault(); document.getElementById('chatSend').click(); }
 });
 function submitAnswer(val){
-  if(state.chatDone) return;
   clearOptions();
   chatBubble(val, 'user');
+  if(editingKey){ finishEdit(val); return; }   // editing a single field
+  if(state.chatDone) return;
   const step = chatFlow[state.chatStep];
   state.article[step.key] = val;
   nextStep();
   askCurrentOrFinish();
+  renderAnswers();
 }
 function renderArticle(){
   const a = state.article;
@@ -1217,34 +1296,58 @@ function hideProgress(){
   if(el) el.remove();
 }
 
+const MAX_PDF_BYTES = 10 * 1024 * 1024;   // hard ceiling: 10 MB per file
+
+// Builds the document once at the given settings and returns {doc, blob}
+async function buildPdfDoc(photos, step, label){
+  let doc = null;
+  for(let i=0;i<photos.length;i++){
+    showProgress(`${label} — الصورة ${i+1} من ${photos.length}`);
+    await yieldToUI();
+    const compressed = await recompressImage(photos[i].dataUrl, step.maxWidth, step.quality);
+    const img = await loadImageEl(compressed);
+    const iw = img ? img.naturalWidth : 1000;
+    const ih = img ? img.naturalHeight : 1333;
+    const orientation = iw >= ih ? 'landscape' : 'portrait';
+    const pageW = orientation === 'landscape' ? 297 : 210;
+    const pageH = orientation === 'landscape' ? 210 : 297;
+    if(!doc) doc = new jspdf.jsPDF({unit:'mm', format:'a4', orientation});
+    else doc.addPage('a4', orientation);
+    const margin = 6;
+    const scale = Math.min((pageW-margin*2)/iw, (pageH-margin*2)/ih);
+    const dw = iw*scale, dh = ih*scale;
+    doc.addImage(compressed, 'JPEG', (pageW-dw)/2, (pageH-dh)/2, dw, dh, undefined, 'FAST');
+  }
+  return { doc, blob: doc.output('blob') };
+}
+
 async function buildPdf(photos, filename){
   if(!photos.length){ toast('لا توجد صور بهذا التصنيف'); return; }
-  const step = pickQuality(photos.length);
-  let doc = null;
   showProgress('جاري التجهيز...');
   try{
-    for(let i=0;i<photos.length;i++){
-      showProgress(`جاري معالجة الصورة ${i+1} من ${photos.length}`);
+    // start from the size-aware guess, then step down only if the file is still too big
+    let step = pickQuality(photos.length);
+    let attempt = 0;
+    let result = await buildPdfDoc(photos, step, 'جاري المعالجة');
+
+    while(result.blob.size > MAX_PDF_BYTES && attempt < 4){
+      attempt++;
+      // shrink dimensions and quality progressively
+      step = {
+        maxWidth: Math.max(700, Math.round(step.maxWidth * 0.75)),
+        quality:  Math.max(0.35, +(step.quality * 0.82).toFixed(2))
+      };
+      showProgress(`الملف كبير — جاري ضغطه (محاولة ${attempt})`);
       await yieldToUI();
-      const compressed = await recompressImage(photos[i].dataUrl, step.maxWidth, step.quality);
-      const img = await loadImageEl(compressed);
-      const iw = img ? img.naturalWidth : 1000;
-      const ih = img ? img.naturalHeight : 1333;
-      const orientation = iw >= ih ? 'landscape' : 'portrait';
-      const pageW = orientation === 'landscape' ? 297 : 210;
-      const pageH = orientation === 'landscape' ? 210 : 297;
-      if(!doc) doc = new jspdf.jsPDF({unit:'mm', format:'a4', orientation});
-      else doc.addPage('a4', orientation);
-      const margin = 6;
-      const scale = Math.min((pageW-margin*2)/iw, (pageH-margin*2)/ih);
-      const dw = iw*scale, dh = ih*scale;
-      doc.addImage(compressed, 'JPEG', (pageW-dw)/2, (pageH-dh)/2, dw, dh, undefined, 'FAST');
+      result = await buildPdfDoc(photos, step, `ضغط ${attempt}`);
     }
+
     showProgress('جاري حفظ الملف...');
     await yieldToUI();
-    doc.save(filename);
+    result.doc.save(filename);
     hideProgress();
-    toast('تم تنزيل الملف');
+    const mb = (result.blob.size/1024/1024).toFixed(1);
+    toast(`تم تنزيل الملف (${mb} MB)`);
   }catch(e){
     hideProgress();
     toast('تعذّر إنشاء الملف');
@@ -1259,44 +1362,12 @@ function pdfFileName(kind){
   if(kind==='workshop') return `ورشة توعوية ${contractor} ${wo}.pdf`;
   return `${wo}.pdf`;
 }
-document.getElementById('pdfAll').addEventListener('click', ()=> buildPdf(state.photos.filter(p=>p.tag!=='workshop'), pdfFileName('all')));
+document.getElementById('pdfAll').addEventListener('click', ()=> buildPdf(state.photos.filter(p=>p.tag!=='workshop' && p.tag!=='violation'), pdfFileName('all')));
 document.getElementById('pdfViolations').addEventListener('click', ()=> buildPdf(state.photos.filter(p=>p.tag==='violation'), pdfFileName('violation')));
 document.getElementById('pdfChecklist').addEventListener('click', ()=> buildPdf(state.photos.filter(p=>p.tag==='checklist'), pdfFileName('checklist')));
 document.getElementById('pdfWorkshop').addEventListener('click', ()=> buildPdf(state.photos.filter(p=>p.tag==='workshop'), pdfFileName('workshop')));
 
-document.getElementById('exportPackage').addEventListener('click', ()=>{
-  const a = state.article;
-  const parsed = parseNotes(a.notesRaw);
-  const noteLines = parsed.points.map((p,i)=> `${i+1}. ${p.text}${p.closed ? ' (تم التعديل)' : ''}`).join('\n');
-  const text =
-`حزمة بيانات الزيارة
-=========================
-رقم الزيارة: ${a.visitNum || ''}
-اليوم: ${a.day}
-التاريخ: ${a.date}
-الوقت: ${a.time}
-اسم المقاول: ${a.contractor}
-الموقع: ${a.location}
-نوع العمل: ${[a.workType, a.workCategory, a.office].filter(Boolean).join(' - ')}
-رقم العمل: ${a.workOrder}
-المستلم: ${a.receiver}
-المصدر: ${a.source}
-منفذ الزيارة: ${a.executor}
-رقم التصريح: ${a.permitNum}
-ورشة توعوية: ${a.workshopDone || ''}
-${parsed.stopWork ? 'إيقاف العمل: نعم' : ''}
 
-الملاحظات (${parsed.points.length}):
-${noteLines || 'لا يوجد'}
----
-الصق هذا النص في محادثة عادية مع Claude عند الحاجة، وأرفق الصور بشكل منفصل.`;
-  const blob = new Blob([text], {type:'text/plain;charset=utf-8'});
-  const url = URL.createObjectURL(blob);
-  const link = document.createElement('a');
-  link.href = url; link.download = 'حزمة-الزيارة.txt';
-  link.click();
-  toast('تم تنزيل حزمة البيانات');
-});
 
 document.getElementById('endVisitBtn').addEventListener('click', async ()=>{
   if(!confirm('إنهاء الزيارة الحالية وبدء زيارة جديدة؟ (الزيارة الحالية تبقى محفوظة بالأرشيف)')) return;
