@@ -118,6 +118,7 @@
   }
   .noteActs button.active{background:var(--hazard); color:var(--asphalt); border-color:var(--hazard); font-weight:700;}
   .noteActs button.del{color:var(--danger); border-color:var(--danger);}
+  .noteActs button.tr{color:var(--steel); border-color:var(--steel);}
   .noteCard.dragging{opacity:.5; outline:2px dashed var(--hazard);}
   .thumblist{display:flex; flex-direction:column; gap:12px; margin-top:12px;}
   .thumb{position:relative; border-radius:10px; overflow:hidden; border:1px solid var(--line); background:#000;}
@@ -162,6 +163,13 @@
     background:var(--panel); border:1px solid var(--line); color:var(--ink); font-size:18px; cursor:pointer;
   }
 
+  .langBtn{
+    background:var(--asphalt); border:1px solid var(--hazard); color:var(--hazard);
+    border-radius:18px; padding:7px 14px; font-family:inherit; font-weight:700;
+    font-size:12.5px; cursor:pointer; flex-shrink:0;
+  }
+  .hintLine{color:var(--steel); font-size:11px; margin-top:3px; display:none;}
+  body.en .hintLine{display:block;}
   .prefixTag{
     background:var(--asphalt); border:1px solid var(--line); color:var(--hazard);
     border-radius:7px; padding:10px 11px; font-weight:700; font-size:14px;
@@ -216,16 +224,21 @@
 <body>
 
 <header>
-  <h1>🦺 Safety Engineer</h1>
-  <div class="sub">توثيق زيارات السلامة · صور بختم زمني وموقع · تجهيز محاضر المخالفات</div>
+  <div style="display:flex; align-items:center; gap:10px;">
+    <div style="flex:1;">
+      <h1>🦺 Safety Engineer</h1>
+      <div class="sub" data-i18n="tagline">توثيق زيارات السلامة · رفع الصور · تجهيز التقارير</div>
+    </div>
+    <button id="langBtn" class="langBtn">EN</button>
+  </div>
 </header>
 
 <nav class="tabs" id="tabs">
-  <button data-tab="camera" class="active">🖼️ الصور</button>
-  <button data-tab="chat">📝 المقال</button>
-  <button data-tab="export">📦 التصدير</button>
-  <button data-tab="followup">📋 متابعة الملاحظات</button>
-  <button data-tab="archive">🗄️ الأرشيف</button>
+  <button data-tab="camera" class="active"><span data-i18n="tab_photos">🖼️ الصور</span></button>
+  <button data-tab="chat"><span data-i18n="tab_article">📝 المقال</span></button>
+  <button data-tab="export"><span data-i18n="tab_export">📦 التصدير</span></button>
+  <button data-tab="followup"><span data-i18n="tab_followup">📋 متابعة الملاحظات</span></button>
+  <button data-tab="archive"><span data-i18n="tab_archive">🗄️ الأرشيف</span></button>
 </nav>
 
 <main>
@@ -233,7 +246,7 @@
 <!-- CAMERA TAB -->
 <section id="tab-camera">
   <div class="panel">
-    <h2>صور الزيارة</h2>
+    <h2 data-i18n="h_photos">صور الزيارة</h2>
     <div class="sub" style="color:var(--ink-dim); font-size:12px; margin-bottom:10px;">
       صوّر بكاميرا جوالك المعتادة ثم ارفع الصور هنا. اختر التصنيف قبل الرفع، ويمكن تغييره لاحقًا لكل صورة.
     </div>
@@ -246,12 +259,12 @@
     </select>
 
     <input type="file" id="galleryInput" accept="image/*" multiple style="display:none;">
-    <button class="btn" id="galleryBtn" style="margin-top:14px;">＋ رفع صور من الجهاز</button>
-    <button class="btn secondary" id="sortToggleBtn" style="margin-top:10px;">ترتيب الصور</button>
+    <button class="btn" id="galleryBtn" style="margin-top:14px;" data-i18n="b_upload">＋ رفع صور من الجهاز</button>
+    <button class="btn secondary" id="sortToggleBtn" style="margin-top:10px;" data-i18n="b_sort">ترتيب الصور</button>
 
     <div id="sortModeBar" style="display:none; align-items:center; gap:10px; margin-top:14px; background:var(--asphalt); border:1px solid var(--hazard); border-radius:8px; padding:10px 12px;">
       <span style="flex:1; font-size:12.5px; color:var(--ink-dim);">اسحب الصور لترتيبها</span>
-      <button class="btn small" id="sortDoneBtn" style="width:auto;">تم</button>
+      <button class="btn small" id="sortDoneBtn" style="width:auto;" data-i18n="b_done">تم</button>
     </div>
     <div id="sortGrid" style="display:none;"></div>
     <div class="thumblist" id="thumbgrid"></div>
@@ -266,13 +279,13 @@
     <div class="chatlog" id="chatlog"></div>
     <div class="chatinput">
       <input id="chatInput" type="text" placeholder="اكتب ردك هنا...">
-      <button class="btn small" id="chatSend">إرسال</button>
+      <button class="btn small" id="chatSend" data-i18n="b_send">إرسال</button>
     </div>
-    <button class="btn secondary" style="margin-top:12px;" id="chatRestart">إعادة تعبئة المقال من البداية</button>
+    <button class="btn secondary" style="margin-top:12px;" id="chatRestart" data-i18n="b_restart">إعادة تعبئة المقال من البداية</button>
   </div>
 
   <div class="panel" id="notesPanel">
-    <h2>ملاحظات الزيارة</h2>
+    <h2 data-i18n="h_notes">ملاحظات الزيارة</h2>
 
     <div class="swRow">
       <span>تم إيقاف العمل</span>
@@ -282,7 +295,7 @@
     <label style="margin-top:12px;">أضف ملاحظة</label>
     <div style="display:flex; gap:8px;">
       <input id="noteInput" type="text" placeholder="اكتب الملاحظة ثم أضف...">
-      <button class="btn small" id="addNoteBtn" style="width:auto;">إضافة</button>
+      <button class="btn small" id="addNoteBtn" style="width:auto;" data-i18n="b_add">إضافة</button>
     </div>
 
     <div style="margin-top:12px;">
@@ -295,50 +308,50 @@
     <div id="notesSummary" class="kv" style="margin-top:10px;"></div>
   </div>
 
-  <div class="panel" id="answersPanel" style="display:none;">
-    <h2>بيانات الزيارة — عدّل أي حقل مباشرة</h2>
+  <div class="panel" id="answersPanel">
+    <h2 data-i18n="h_fields">بيانات الزيارة — عدّل أي حقل مباشرة</h2>
     <div id="answersList"></div>
   </div>
 
   <div class="panel" id="articlePreviewPanel" style="display:none;">
-    <h2>المقال الجاهز</h2>
+    <h2 data-i18n="h_article">المقال الجاهز</h2>
     <div class="sub" style="color:var(--ink-dim); font-size:12px; margin-bottom:8px;">تقدر تعدّل النص يدويًا قبل النسخ.</div>
     <textarea id="articleText" class="mono" style="width:100%; min-height:340px; white-space:pre-wrap; font-size:12.5px; background:var(--asphalt); padding:12px; border-radius:8px; border:1px solid var(--line); color:var(--ink); resize:vertical;"></textarea>
-    <button class="btn secondary" style="margin-top:10px;" id="copyArticle">نسخ نص المقال</button>
+    <button class="btn secondary" style="margin-top:10px;" id="copyArticle" data-i18n="b_copy">نسخ نص المقال</button>
   </div>
 </section>
 
 <!-- EXPORT TAB -->
 <section id="tab-export" style="display:none;">
   <div class="panel">
-    <h2>حالة الزيارة</h2>
+    <h2 data-i18n="h_status">حالة الزيارة</h2>
     <div class="kv"><span>عدد الصور</span><span id="expPhotoCount">0</span></div>
     <div class="kv"><span>المقال</span><span id="expArticleStatus">غير جاهز</span></div>
     <div class="kv"><span>عدد الملاحظات</span><span id="expViolCount">0</span></div>
   </div>
 
   <div class="panel">
-    <h2>ملفات PDF</h2>
-    <button class="btn" id="pdfAll">تحميل PDF — كل صور الزيارة</button>
-    <button class="btn secondary" style="margin-top:10px;" id="pdfViolations">تحميل PDF — الملاحظات فقط</button>
-    <button class="btn secondary" style="margin-top:10px;" id="pdfChecklist">تحميل PDF — قائمة الفحص</button>
-    <button class="btn secondary" style="margin-top:10px;" id="pdfWorkshop">تحميل PDF — ورشة توعوية</button>
+    <h2 data-i18n="h_pdf">ملفات PDF</h2>
+    <button class="btn" id="pdfAll" data-i18n="b_pdf_all">تحميل PDF — كل صور الزيارة</button>
+    <button class="btn secondary" style="margin-top:10px;" id="pdfViolations" data-i18n="b_pdf_notes">تحميل PDF — الملاحظات فقط</button>
+    <button class="btn secondary" style="margin-top:10px;" id="pdfChecklist" data-i18n="b_pdf_check">تحميل PDF — قائمة الفحص</button>
+    <button class="btn secondary" style="margin-top:10px;" id="pdfWorkshop" data-i18n="b_pdf_ws">تحميل PDF — ورشة توعوية</button>
   </div>
 
   <div class="panel">
-    <h2>الزيارة الحالية</h2>
+    <h2 data-i18n="h_current">الزيارة الحالية</h2>
     <div class="sub" style="color:var(--ink-dim); font-size:12px; margin-bottom:10px;">
       كل شي تسويه (صور، مقال، مخالفات) يُحفظ تلقائيًا في الأرشيف تحت الزيارة الحالية — حتى لو أغلقت التطبيق.
       لما تخلص الزيارة، اضغط الزر تحت لإنهائها وبدء زيارة جديدة فاضية.
     </div>
-    <button class="btn" id="endVisitBtn">إنهاء الزيارة الحالية وبدء زيارة جديدة</button>
+    <button class="btn" id="endVisitBtn" data-i18n="b_endvisit">إنهاء الزيارة الحالية وبدء زيارة جديدة</button>
   </div>
 </section>
 
 <!-- FOLLOW-UP TAB -->
 <section id="tab-followup" style="display:none;">
   <div class="panel">
-    <h2>متابعة الملاحظات</h2>
+    <h2 data-i18n="h_followup">متابعة الملاحظات</h2>
     <div class="sub" style="color:var(--ink-dim); font-size:12px; margin-bottom:10px;">
       أدخل رقم الزيارة (من ملف متابعة الزيارات اليومية). تنزيل ملف المتابعة لكل الزيارات يتم من تبويب الأرشيف.
     </div>
@@ -346,7 +359,7 @@
     <div style="display:flex; gap:8px; align-items:center;">
       <span class="prefixTag">SV-</span>
       <input id="visitNumInput" type="text" inputmode="numeric" placeholder="4438">
-      <button class="btn small" id="saveVisitNumBtn" style="width:auto;">حفظ</button>
+      <button class="btn small" id="saveVisitNumBtn" style="width:auto;" data-i18n="b_save">حفظ</button>
     </div>
     <div class="sub" style="color:var(--ink-dim); font-size:11.5px; margin-top:7px;">
       اكتب الرقم فقط — كلمة <b>SV-</b> تُضاف تلقائيًا.
@@ -354,7 +367,7 @@
     <div id="visitNumStatus" class="meta" style="color:var(--ink-dim); font-size:12px; margin-top:8px;"></div>
   </div>
   <div class="panel">
-    <h2>ملاحظات هذه الزيارة</h2>
+    <h2 data-i18n="h_thisnotes">ملاحظات هذه الزيارة</h2>
     <div id="followupPreview"></div>
   </div>
 </section>
@@ -362,20 +375,20 @@
 <!-- ARCHIVE TAB -->
 <section id="tab-archive" style="display:none;">
   <div class="panel">
-    <h2>الزيارات المحفوظة</h2>
+    <h2 data-i18n="h_saved">الزيارات المحفوظة</h2>
     <div id="archiveList"></div>
     <div class="empty" id="archiveEmpty">لا توجد زيارات محفوظة بعد</div>
   </div>
   <div class="panel">
-    <h2>تصدير الأرشيف لإكسل</h2>
-    <button class="btn" id="exportExcelBtn">تنزيل ملف زيارات اليوم (كل الزيارات)</button>
-    <button class="btn secondary" style="margin-top:10px;" id="exportAllFollowupBtn">تنزيل ملف متابعة الملاحظات (كل الزيارات)</button>
+    <h2 data-i18n="h_excel">تصدير الأرشيف لإكسل</h2>
+    <button class="btn" id="exportExcelBtn" data-i18n="b_x_daily">تنزيل ملف زيارات اليوم (كل الزيارات)</button>
+    <button class="btn secondary" style="margin-top:10px;" id="exportAllFollowupBtn" data-i18n="b_x_follow">تنزيل ملف متابعة الملاحظات (كل الزيارات)</button>
     <div class="sub" style="color:var(--ink-dim); font-size:11.5px; margin-top:9px;">
       ملف المتابعة يشمل ملاحظات كل زيارة أُدخل لها رقم زيارة، مرتّبة بالتسلسل.
     </div>
   </div>
   <div class="panel">
-    <h2>مساحة التخزين</h2>
+    <h2 data-i18n="h_storage">مساحة التخزين</h2>
     <div id="storageInfo">
       <div class="kv"><span>المستخدم حاليًا</span><span id="stUsed">—</span></div>
       <div class="kv"><span>المتاح تقريبًا</span><span id="stQuota">—</span></div>
@@ -390,7 +403,7 @@
   </div>
 
   <div class="panel">
-    <h2>تفريغ الصور القديمة</h2>
+    <h2 data-i18n="h_purge">تفريغ الصور القديمة</h2>
     <div class="sub" style="color:var(--ink-dim); font-size:12px; margin-bottom:10px;">
       يحذف صور الزيارات المنتهية الأقدم من المدة المحددة، ويُبقي كل البيانات النصية (المقال والملاحظات) كما هي.
     </div>
@@ -402,12 +415,12 @@
       <option value="60">شهرين</option>
       <option value="90">ثلاثة أشهر</option>
     </select>
-    <button class="btn secondary" style="margin-top:10px;" id="purgePhotosBtn">تفريغ صور الزيارات القديمة</button>
+    <button class="btn secondary" style="margin-top:10px;" id="purgePhotosBtn" data-i18n="b_purge">تفريغ صور الزيارات القديمة</button>
   </div>
 
   <div class="panel">
-    <h2>مسح الأرشيف</h2>
-    <button class="btn danger" id="clearArchiveBtn">مسح كل الزيارات المحفوظة</button>
+    <h2 data-i18n="h_clear">مسح الأرشيف</h2>
+    <button class="btn danger" id="clearArchiveBtn" data-i18n="b_clear">مسح كل الزيارات المحفوظة</button>
   </div>
 </section>
 
@@ -576,6 +589,102 @@ function getNotes(article){
     closed:  list.filter(n => !n.general && n.closed)      // مغلقة
   };
 }
+
+// ---------- Language (UI only — all outputs stay Arabic) ----------
+const LANG_KEY = 'fieldInspectorLang';
+let lang = 'ar';
+try{ lang = localStorage.getItem(LANG_KEY) || 'ar'; }catch(e){}
+
+const I18N = {
+  tagline:      "Safety visit logging · photo upload · report generation",
+  tab_photos:   "🖼️ Photos",
+  tab_article:  "📝 Report",
+  tab_export:   "📦 Export",
+  tab_followup: "📋 Notes Follow-up",
+  tab_archive:  "🗄️ Archive",
+
+  h_photos:    "Visit photos",
+  h_notes:     "Visit notes",
+  h_fields:    "Visit details — edit any field directly",
+  h_article:   "Generated report",
+  h_status:    "Visit status",
+  h_pdf:       "PDF files",
+  h_current:   "Current visit",
+  h_followup:  "Notes follow-up",
+  h_thisnotes: "Notes for this visit",
+  h_saved:     "Saved visits",
+  h_excel:     "Export archive to Excel",
+  h_storage:   "Storage space",
+  h_purge:     "Clear old photos",
+  h_clear:     "Clear archive",
+
+  b_upload:   "＋ Upload photos from device",
+  b_sort:     "Reorder photos",
+  b_done:     "Done",
+  b_add:      "Add",
+  b_copy:     "Copy report text",
+  b_pdf_all:  "Download PDF — all visit photos",
+  b_pdf_notes:"Download PDF — notes only",
+  b_pdf_check:"Download PDF — checklist",
+  b_pdf_ws:   "Download PDF — awareness workshop",
+  b_endvisit: "End current visit & start a new one",
+  b_save:     "Save",
+  b_x_daily:  "Download daily visits file (all visits)",
+  b_x_follow: "Download notes follow-up file (all visits)",
+  b_purge:    "Clear photos of old visits",
+  b_clear:    "Delete all saved visits",
+  b_restart:  "Start the report over",
+  b_send:     "Send"
+};
+
+// Short English explanation shown under each field when the UI is in English
+const FIELD_HINTS = {
+  contractor:   "Contractor company name (Arabic or English).",
+  location:     "District / neighbourhood of the work site.",
+  workType:     "Type of work performed, e.g. excavation, cable laying.",
+  workCategory: "Emergency, Construction, or Operations & Maintenance.",
+  office:       "Which office the job belongs to: North or Khurais.",
+  workOrder:    "Work order number as issued in the system.",
+  receiver:     "Name of the person who received the visit on site.",
+  source:       "Name of the source / originator of the work order.",
+  executor:     "Name of the engineer who carried out the visit.",
+  permitNum:    "Work permit number (used in the Excel file only).",
+  workshopDone: "Was a safety awareness workshop delivered during the visit?"
+};
+
+// English labels for the option buttons (values stay Arabic in the output)
+const OPTION_EN = {
+  "طوارئ":"Emergency", "إنشاءات":"Construction", "عمليات وصيانة":"Operations & Maintenance",
+  "شمال":"North", "خريص":"Khurais", "نعم":"Yes", "لا":"No"
+};
+const LABEL_EN = {
+  contractor:"Contractor", location:"District", workType:"Work type", workCategory:"Category",
+  office:"Office", workOrder:"Work order no.", receiver:"Receiver", source:"Source",
+  executor:"Visit engineer", permitNum:"Permit no.", workshopDone:"Awareness workshop"
+};
+
+function t(key){ return lang==='en' ? (I18N[key] || key) : null; }
+
+function applyLang(){
+  document.body.classList.toggle('en', lang==='en');
+  document.documentElement.lang = lang==='en' ? 'en' : 'ar';
+  document.getElementById('langBtn').textContent = lang==='en' ? 'ع' : 'EN';
+  document.querySelectorAll('[data-i18n]').forEach(el=>{
+    const k = el.dataset.i18n;
+    if(!el.dataset.ar) el.dataset.ar = el.textContent;   // remember the Arabic original
+    el.textContent = (lang==='en' && I18N[k]) ? I18N[k] : el.dataset.ar;
+  });
+  // re-render the dynamic parts so their labels follow the language
+  renderQuickNotes();
+  renderNotes();
+  renderAnswers();
+  renderFollowup();
+}
+document.getElementById('langBtn').addEventListener('click', ()=>{
+  lang = (lang==='en') ? 'ar' : 'en';
+  try{ localStorage.setItem(LANG_KEY, lang); }catch(e){}
+  applyLang();
+});
 
 // ---------- Tabs ----------
 document.getElementById('tabs').addEventListener('click', (e)=>{
@@ -753,20 +862,127 @@ function setupSortDrag(g){
 document.getElementById('sortToggleBtn').addEventListener('click', ()=> toggleSortMode(true));
 document.getElementById('sortDoneBtn').addEventListener('click', ()=> toggleSortMode(false));
 
+// ---------- English → Arabic helper for notes (safety terminology) ----------
+// Longest phrases first so multi-word terms win over single words.
+const EN_AR_TERMS = [
+  // full, correctly-ordered phrases first — these produce natural Arabic
+  ["ppe not worn","عدم ارتداء مهمات الوقاية الشخصية"],
+  ["personal protective equipment not worn","عدم ارتداء مهمات الوقاية الشخصية"],
+  ["no work permit","عدم وجود تصريح عمل"],
+  ["work permit expired","تصريح العمل منتهي الصلاحية"],
+  ["expired permit","التصريح منتهي الصلاحية"],
+  ["expired safety cards","بطاقات الأمن الصناعي منتهية"],
+  ["excavation not secured","عدم تأمين الحفرية"],
+  ["no warning signs","عدم وجود لوحات تحذيرية"],
+  ["no safety signage","عدم وجود لوحات إرشادية"],
+  ["poor site isolation","عزل الموقع غير جيد"],
+  ["site not isolated","عدم عزل الموقع"],
+  ["damaged safety helmet","خوذة السلامة تالفة"],
+  ["damaged barriers","حواجز الحماية تالفة"],
+  ["incomplete barriers","حواجز الحماية غير مكتملة"],
+  ["no fire extinguisher","عدم وجود طفاية حريق"],
+  ["no first aid kit","عدم وجود حقيبة إسعافات أولية"],
+  ["waste not removed","عدم إزالة المخلفات"],
+  ["poor housekeeping","نظافة الموقع غير جيدة"],
+  ["no earthing","عدم وجود تأريض"],
+  ["unsafe scaffolding","السقالة غير آمنة"],
+  ["no safety vest","عدم ارتداء السترة العاكسة"],
+  ["no safety shoes","عدم ارتداء أحذية السلامة"],
+  ["no helmet","عدم ارتداء الخوذة"],
+  ["no gloves","عدم ارتداء القفازات"],
+  ["personal protective equipment","مهمات الوقاية الشخصية"],
+  ["safety awareness workshop","ورشة توعوية للسلامة"],
+  ["work at height","العمل على ارتفاع"],
+  ["confined space","الأماكن المغلقة"],
+  ["fire extinguisher","طفاية حريق"],
+  ["first aid kit","حقيبة إسعافات أولية"],
+  ["work permit","تصريح العمل"],
+  ["safety signage","لوحات إرشادية"],
+  ["warning signs","لوحات تحذيرية"],
+  ["safety barriers","حواجز الحماية"],
+  ["protective barriers","حواجز الحماية"],
+  ["site isolation","عزل الموقع"],
+  ["safety helmet","خوذة السلامة"],
+  ["safety shoes","أحذية السلامة"],
+  ["safety harness","حزام الأمان"],
+  ["safety vest","سترة عاكسة"],
+  ["insulated tools","عدد معزولة"],
+  ["earthing","التأريض"],
+  ["excavation","الحفرية"],
+  ["scaffolding","السقالة"],
+  ["barricade","حاجز"],
+  ["barriers","حواجز"],
+  ["signage","لوحات إرشادية"],
+  ["housekeeping","نظافة الموقع"],
+  ["waste","المخلفات"],
+  ["debris","المخلفات"],
+  ["cable","الكابل"],
+  ["trench","الخندق"],
+  ["ladder","السلم"],
+  ["gloves","القفازات"],
+  ["goggles","النظارات الواقية"],
+  ["helmet","الخوذة"],
+  ["vehicle","المركبة"],
+  ["equipment","المعدات"],
+  ["worker","العامل"],
+  ["workers","العمال"],
+  ["supervisor","المشرف"],
+  ["contractor","المقاول"],
+  ["site","الموقع"],
+  ["permit","التصريح"],
+  ["expired","منتهي الصلاحية"],
+  ["missing","غير موجود"],
+  ["not available","غير متوفر"],
+  ["not secured","غير مؤمّن"],
+  ["not worn","عدم ارتداء"],
+  ["not used","غير مستخدم"],
+  ["unsafe","غير آمن"],
+  ["damaged","تالف"],
+  ["incomplete","غير مكتمل"],
+  ["improper","غير مطابق"],
+  ["poor","ضعيف"],
+  ["no ","عدم وجود "],
+  ["without","بدون"],
+  ["ppe","مهمات الوقاية الشخصية"],
+  // connectors / filler words so no English is left behind
+  ["and","و"], ["with","مع"], ["without","بدون"], ["for","لـ"],
+  ["on site","بالموقع"], ["at site","بالموقع"], ["in site","بالموقع"],
+  ["on the","على"], ["in the","في"], ["at the","في"],
+  ["on","على"], ["in","في"], ["at","في"], ["of","لـ"], ["to","إلى"],
+  ["the",""], ["is",""], ["are",""], ["was",""], ["were",""], ["a",""], ["an",""], ["by","بواسطة"]
+];
+function looksEnglish(s){ return /[A-Za-z]/.test(s) && !/[\u0600-\u06FF]/.test(s); }
+function translateNote(text){
+  let out = ' ' + text.toLowerCase().trim() + ' ';
+  let hit = false;
+  EN_AR_TERMS.forEach(([en, ar])=>{
+    const re = new RegExp('\\b' + en.trim().replace(/[.*+?^${}()|[\]\\]/g,'\\$&') + '\\b', 'gi');
+    if(re.test(out)){ out = out.replace(re, ' '+ar+' '); hit = true; }
+  });
+  out = out.replace(/\s+/g,' ').trim();
+  return { text: out, translated: hit };
+}
+
 // ---------- Notes builder ----------
 const QUICK_KEY = 'fieldInspectorQuickNotes';
+// Each preset carries both languages: EN is shown in the English UI, AR is what gets written.
 const DEFAULT_QUICK = [
-  "عدم ارتداء مهمات الوقاية الشخصية",
-  "عزل الموقع غير جيد",
-  "بطاقات الأمن الصناعي منتهية",
-  "عدم وجود تصريح عمل بالموقع",
-  "حواجز الحماية غير مكتملة",
-  "عدم وجود طفاية حريق صالحة",
-  "مخلفات لم تُزل من الموقع",
-  "نسخة التصريح غير موجودة"
+  {ar:"عدم ارتداء مهمات الوقاية الشخصية", en:"PPE not worn"},
+  {ar:"عزل الموقع غير جيد",               en:"Poor site isolation"},
+  {ar:"بطاقات الأمن الصناعي منتهية",      en:"Expired safety cards"},
+  {ar:"عدم وجود تصريح عمل بالموقع",       en:"No work permit on site"},
+  {ar:"حواجز الحماية غير مكتملة",         en:"Incomplete protective barriers"},
+  {ar:"عدم وجود طفاية حريق صالحة",        en:"No valid fire extinguisher"},
+  {ar:"مخلفات لم تُزل من الموقع",          en:"Waste not removed from site"},
+  {ar:"نسخة التصريح غير موجودة",          en:"Permit copy missing"},
+  {ar:"عدم تأمين الحفرية",                en:"Excavation not secured"},
+  {ar:"عدم وجود لوحات إرشادية",           en:"No warning signage"}
 ];
 function getQuickNotes(){
-  try{ const v = JSON.parse(localStorage.getItem(QUICK_KEY)); if(Array.isArray(v) && v.length) return v; }catch(e){}
+  try{
+    const v = JSON.parse(localStorage.getItem(QUICK_KEY));
+    if(Array.isArray(v) && v.length && typeof v[0] === 'object') return v;
+  }catch(e){}
   return DEFAULT_QUICK;
 }
 function saveQuickNotes(list){ try{ localStorage.setItem(QUICK_KEY, JSON.stringify(list)); }catch(e){} }
@@ -786,10 +1002,14 @@ function addNote(text, opts){
 
 function renderQuickNotes(){
   const wrap = document.getElementById('quickNotes');
-  wrap.innerHTML = getQuickNotes().map((q,i)=>`<span class="qchip" data-i="${i}">${q}</span>`).join('');
+  const qs = getQuickNotes();
+  wrap.innerHTML = qs.map((q,i)=>{
+    const shown = (lang==='en' && q.en) ? q.en : q.ar;
+    return `<span class="qchip" data-i="${i}" title="${q.ar}">${shown}</span>`;
+  }).join('');
   wrap.querySelectorAll('.qchip').forEach(c=>c.addEventListener('click', ()=>{
-    addNote(getQuickNotes()[parseInt(c.dataset.i)]);
-    toast('تمت إضافة الملاحظة');
+    addNote(getQuickNotes()[parseInt(c.dataset.i)].ar);   // always the Arabic text
+    toast(lang==='en' ? 'Note added' : 'تمت إضافة الملاحظة');
   }));
 }
 
@@ -799,26 +1019,30 @@ function renderNotes(){
   document.getElementById('notesEmpty').style.display = list.length ? 'none' : 'block';
 
   let countedIdx = 0;
+  const L = (ar,en)=> (lang==='en' ? en : ar);
   wrap.innerHTML = list.map((n, i)=>{
     const num = n.general ? '—' : (++countedIdx);
+    const trBtn = looksEnglish(n.text)
+      ? `<button class="tr" data-i="${i}">${L('ترجم للعربي','Translate to Arabic')}</button>` : '';
     return `<div class="noteCard ${n.general?'general':''} ${(!n.general && n.closed)?'closed':''}" data-i="${i}">
       <div class="noteTop">
         <span class="idx">${num}</span>
         <span class="txt" data-i="${i}">${n.text}</span>
       </div>
       <div class="noteActs">
-        <button class="tgClosed ${(!n.general && n.closed)?'active':''}" data-i="${i}">تم التعديل</button>
-        <button class="tgGeneral ${n.general?'active':''}" data-i="${i}">عامة (لا تُحتسب)</button>
+        <button class="tgClosed ${(!n.general && n.closed)?'active':''}" data-i="${i}">${L('تم التعديل','Corrected')}</button>
+        <button class="tgGeneral ${n.general?'active':''}" data-i="${i}">${L('عامة (لا تُحتسب)','General (not counted)')}</button>
+        ${trBtn}
         <button class="up" data-i="${i}">▲</button>
         <button class="down" data-i="${i}">▼</button>
-        <button class="del" data-i="${i}">حذف</button>
+        <button class="del" data-i="${i}">${L('حذف','Delete')}</button>
       </div>
     </div>`;
   }).join('');
 
   const n = getNotes();
   document.getElementById('notesSummary').innerHTML =
-    `<span>عدد الملاحظات المحتسبة</span><span>${n.counted.length} — المغلقة: ${n.closed.length}</span>`;
+    `<span>${L('عدد الملاحظات المحتسبة','Counted notes')}</span><span>${n.counted.length} — ${L('المغلقة','closed')}: ${n.closed.length}</span>`;
 
   // inline text editing
   wrap.querySelectorAll('.txt').forEach(el=>el.addEventListener('click', ()=>{
@@ -849,6 +1073,17 @@ function renderNotes(){
     list[i].general = !list[i].general;
     if(list[i].general) list[i].closed = false;
     renderNotes(); if(state.chatDone) renderArticle(); autosave();
+  }));
+  wrap.querySelectorAll('.tr').forEach(b=>b.addEventListener('click', ()=>{
+    const i = parseInt(b.dataset.i);
+    const res = translateNote(list[i].text);
+    if(res.translated){
+      list[i].text = res.text;
+      renderNotes(); if(state.chatDone) renderArticle(); autosave();
+      toast(lang==='en' ? 'Translated' : 'تمت الترجمة');
+    } else {
+      toast(lang==='en' ? 'No known terms found — please type it in Arabic' : 'لم يتم التعرف على المصطلحات — اكتبها بالعربي');
+    }
   }));
   wrap.querySelectorAll('.del').forEach(b=>b.addEventListener('click', ()=>{
     list.splice(parseInt(b.dataset.i),1);
@@ -887,24 +1122,29 @@ function renderAnswers(){
   const panel = document.getElementById('answersPanel');
   const list  = document.getElementById('answersList');
   const fields = chatFlow.filter(st => !(st.skipIf && st.skipIf(state.article)));
-  const anyAnswered = fields.some(st => String(state.article[st.key]||'').trim() !== '');
-  if(!anyAnswered && !state.chatDone){ panel.style.display='none'; list.innerHTML=''; return; }
   panel.style.display='block';
 
   list.innerHTML = fields.map(st=>{
     const val = state.article[st.key] || '';
+    const lbl = (lang==='en' && LABEL_EN[st.key]) ? LABEL_EN[st.key] : st.label;
+    const hint = (lang==='en' && FIELD_HINTS[st.key])
+      ? `<div class="hintLine">${FIELD_HINTS[st.key]}</div>` : '';
     if(st.options){
-      const opts = st.options.map(o=>
-        `<button class="optBtn ${val===o?'active':''}" data-key="${st.key}" data-val="${o}">${o}</button>`
-      ).join('');
+      const opts = st.options.map(o=>{
+        const shown = (lang==='en' && OPTION_EN[o]) ? OPTION_EN[o] : o;
+        return `<button class="optBtn ${val===o?'active':''}" data-key="${st.key}" data-val="${o}">${shown}</button>`;
+      }).join('');
       return `<div class="fRow">
-        <span class="fLbl">${st.label}</span>
-        <div class="fOpts">${opts}</div>
+        <span class="fLbl">${lbl}</span>
+        <div style="flex:1;"><div class="fOpts">${opts}</div>${hint}</div>
       </div>`;
     }
     return `<div class="fRow">
-      <span class="fLbl">${st.label}</span>
-      <input class="fInp" data-key="${st.key}" type="text" value="${String(val).replace(/"/g,'&quot;')}" placeholder="—">
+      <span class="fLbl">${lbl}</span>
+      <div style="flex:1;">
+        <input class="fInp" data-key="${st.key}" type="text" value="${String(val).replace(/"/g,'&quot;')}" placeholder="—">
+        ${hint}
+      </div>
     </div>`;
   }).join('');
 
@@ -1577,6 +1817,7 @@ function toast(msg){
   renderQuickNotes();
   startChat();
   renderExportTab();
+  applyLang();
   // build thumbnails for any older photos that don't have one yet
   (async ()=>{
     let changed = false;
