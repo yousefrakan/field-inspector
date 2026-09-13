@@ -83,25 +83,42 @@
   button.btn.small{width:auto; padding:8px 14px; font-size:12.5px;}
   button.btn:disabled{opacity:.4; cursor:not-allowed;}
 
-  .camwrap{position:relative; border-radius:10px; overflow:hidden; background:#000; aspect-ratio:3/4;}
-  video, canvas.captureCanvas{width:100%; height:100%; object-fit:contain; display:block;}
-  .camwrap .overlay-hint{
-    position:absolute; top:10px; left:10px; right:10px; background:rgba(0,0,0,.6);
-    padding:8px 10px; border-radius:6px; font-size:12px; color:var(--ink); text-align:center;
-  }
-  .flashBtn{
-    position:absolute; bottom:22px; right:14px; padding:9px 13px; border-radius:20px;
-    background:rgba(0,0,0,.55); border:1px solid rgba(255,255,255,.25); color:#fff;
-    font-family:inherit; font-size:12.5px; font-weight:600; cursor:pointer;
-  }
-  .flashBtn.on{ background:var(--hazard); color:var(--asphalt); border-color:var(--hazard); }
-  .flashBtn.hidden{ display:none; }
-  .shutter{
-    position:absolute; bottom:14px; left:50%; transform:translateX(-50%);
-    width:64px; height:64px; border-radius:50%; background:var(--hazard); border:4px solid var(--asphalt-2);
-    box-shadow:0 0 0 2px var(--hazard);
-  }
+  .swRow{display:flex; align-items:center; gap:10px; padding:10px 12px; background:var(--asphalt); border:1px solid var(--line); border-radius:8px;}
+  .swRow span{flex:1; font-size:13.5px; font-weight:600;}
+  .sw{width:50px; height:28px; border-radius:20px; background:var(--line); border:none; position:relative; cursor:pointer; padding:0;}
+  .sw .knob{position:absolute; top:3px; right:3px; width:22px; height:22px; border-radius:50%; background:#fff; transition:all .18s;}
+  .sw.on{background:var(--danger);}
+  .sw.on .knob{right:25px;}
 
+  .qchip{
+    display:inline-block; background:var(--asphalt); border:1px solid var(--line); color:var(--ink);
+    border-radius:16px; padding:6px 11px; font-size:11.5px; margin:0 0 6px 6px; cursor:pointer;
+  }
+  .qchip:active{border-color:var(--hazard); color:var(--hazard);}
+
+  .noteCard{
+    background:var(--asphalt); border:1px solid var(--line); border-radius:9px;
+    padding:10px 12px; margin-bottom:8px; touch-action:none;
+  }
+  .noteCard.general{border-style:dashed; opacity:.85;}
+  .noteCard.closed{border-color:#2C5F2D;}
+  .noteTop{display:flex; align-items:flex-start; gap:8px;}
+  .noteTop .idx{
+    background:var(--danger); color:#fff; font-size:10.5px; font-weight:700;
+    min-width:20px; height:20px; border-radius:50%; display:flex; align-items:center; justify-content:center; flex-shrink:0;
+  }
+  .noteCard.general .noteTop .idx{background:var(--steel);}
+  .noteCard.closed .noteTop .idx{background:#2C5F2D;}
+  .noteTop .txt{flex:1; font-size:13px; line-height:1.55;}
+  .noteTop .txt input{width:100%; font-size:13px; padding:6px 8px;}
+  .noteActs{display:flex; flex-wrap:wrap; gap:6px; margin-top:8px;}
+  .noteActs button{
+    width:auto; padding:5px 10px; font-size:11px; border-radius:6px; cursor:pointer;
+    background:var(--panel); border:1px solid var(--line); color:var(--ink-dim); font-family:inherit;
+  }
+  .noteActs button.active{background:var(--hazard); color:var(--asphalt); border-color:var(--hazard); font-weight:700;}
+  .noteActs button.del{color:var(--danger); border-color:var(--danger);}
+  .noteCard.dragging{opacity:.5; outline:2px dashed var(--hazard);}
   .thumblist{display:flex; flex-direction:column; gap:12px; margin-top:12px;}
   .thumb{position:relative; border-radius:10px; overflow:hidden; border:1px solid var(--line); background:#000;}
   .thumb img{width:100%; height:220px; object-fit:cover; display:block; cursor:pointer;}
@@ -145,15 +162,20 @@
     background:var(--panel); border:1px solid var(--line); color:var(--ink); font-size:18px; cursor:pointer;
   }
 
-  .ansRow{
-    display:flex; align-items:center; gap:10px; padding:9px 11px; margin-bottom:7px;
-    background:var(--asphalt); border:1px solid var(--line); border-radius:8px; cursor:pointer;
+  .prefixTag{
+    background:var(--asphalt); border:1px solid var(--line); color:var(--hazard);
+    border-radius:7px; padding:10px 11px; font-weight:700; font-size:14px;
+    font-family:'IBM Plex Mono', monospace; direction:ltr;
   }
-  .ansRow:active{ border-color:var(--hazard); }
-  .ansRow .lbl{ color:var(--ink-dim); font-size:11.5px; min-width:105px; }
-  .ansRow .val{ flex:1; color:var(--ink); font-size:13px; font-weight:600; }
-  .ansRow .edit{ color:var(--hazard); font-size:12px; }
-  .ansRow.editing{ border-color:var(--hazard); background:#33383a; }
+  .fRow{display:flex; align-items:center; gap:10px; margin-bottom:8px;}
+  .fLbl{color:var(--ink-dim); font-size:11.5px; min-width:96px; text-align:right;}
+  .fInp{flex:1; font-size:13px; padding:8px 10px;}
+  .fOpts{flex:1; display:flex; flex-wrap:wrap; gap:6px;}
+  .optBtn{
+    padding:7px 12px; border-radius:7px; font-size:12px; cursor:pointer; font-family:inherit;
+    background:var(--asphalt); border:1px solid var(--line); color:var(--ink-dim);
+  }
+  .optBtn.active{background:var(--hazard); color:var(--asphalt); border-color:var(--hazard); font-weight:700;}
   .chatlog{display:flex; flex-direction:column; gap:10px; max-height:340px; overflow-y:auto; padding-bottom:6px;}
   .bubble{padding:10px 13px; border-radius:10px; font-size:13.5px; line-height:1.6; max-width:88%;}
   .bubble.bot{background:var(--asphalt); border:1px solid var(--line); align-self:flex-start;}
@@ -199,7 +221,7 @@
 </header>
 
 <nav class="tabs" id="tabs">
-  <button data-tab="camera" class="active">📷 تصوير</button>
+  <button data-tab="camera" class="active">🖼️ الصور</button>
   <button data-tab="chat">📝 المقال</button>
   <button data-tab="export">📦 التصدير</button>
   <button data-tab="followup">📋 متابعة الملاحظات</button>
@@ -211,24 +233,22 @@
 <!-- CAMERA TAB -->
 <section id="tab-camera">
   <div class="panel">
-    <h2>الكاميرا</h2>
-    <div class="camwrap" id="camwrap">
-      <video id="video" autoplay playsinline muted></video>
-      <canvas id="captureCanvas" class="captureCanvas" style="display:none;"></canvas>
-      <div class="overlay-hint" id="camHint">اضغط للسماح بالوصول للكاميرا والموقع</div>
-      <button class="flashBtn" id="flashBtn" title="الفلاش">⚡ الفلاش</button>
-      <button class="shutter" id="shutterBtn" title="التقاط"></button>
+    <h2>صور الزيارة</h2>
+    <div class="sub" style="color:var(--ink-dim); font-size:12px; margin-bottom:10px;">
+      صوّر بكاميرا جوالك المعتادة ثم ارفع الصور هنا. اختر التصنيف قبل الرفع، ويمكن تغييره لاحقًا لكل صورة.
     </div>
-    <label style="margin-top:14px;">تصنيف الصورة التالية</label>
+    <label>تصنيف الصور التي سترفعها</label>
     <select id="photoTag">
       <option value="site">موقع عام</option>
       <option value="violation">ملاحظة/مخالفة</option>
       <option value="checklist">قائمة الفحص</option>
       <option value="workshop">ورشة توعوية</option>
     </select>
+
     <input type="file" id="galleryInput" accept="image/*" multiple style="display:none;">
-    <button class="btn secondary" id="galleryBtn" style="margin-top:14px;">إضافة صور من المعرض</button>
+    <button class="btn" id="galleryBtn" style="margin-top:14px;">＋ رفع صور من الجهاز</button>
     <button class="btn secondary" id="sortToggleBtn" style="margin-top:10px;">ترتيب الصور</button>
+
     <div id="sortModeBar" style="display:none; align-items:center; gap:10px; margin-top:14px; background:var(--asphalt); border:1px solid var(--hazard); border-radius:8px; padding:10px 12px;">
       <span style="flex:1; font-size:12.5px; color:var(--ink-dim);">اسحب الصور لترتيبها</span>
       <button class="btn small" id="sortDoneBtn" style="width:auto;">تم</button>
@@ -251,8 +271,32 @@
     <button class="btn secondary" style="margin-top:12px;" id="chatRestart">إعادة تعبئة المقال من البداية</button>
   </div>
 
+  <div class="panel" id="notesPanel">
+    <h2>ملاحظات الزيارة</h2>
+
+    <div class="swRow">
+      <span>تم إيقاف العمل</span>
+      <button class="sw" id="stopWorkSw" aria-pressed="false"><span class="knob"></span></button>
+    </div>
+
+    <label style="margin-top:12px;">أضف ملاحظة</label>
+    <div style="display:flex; gap:8px;">
+      <input id="noteInput" type="text" placeholder="اكتب الملاحظة ثم أضف...">
+      <button class="btn small" id="addNoteBtn" style="width:auto;">إضافة</button>
+    </div>
+
+    <div style="margin-top:12px;">
+      <div style="color:var(--ink-dim); font-size:11.5px; margin-bottom:6px;">ملاحظات سريعة — اضغط للإضافة</div>
+      <div id="quickNotes"></div>
+    </div>
+
+    <div id="notesList" style="margin-top:14px;"></div>
+    <div class="empty" id="notesEmpty">لا توجد ملاحظات بعد</div>
+    <div id="notesSummary" class="kv" style="margin-top:10px;"></div>
+  </div>
+
   <div class="panel" id="answersPanel" style="display:none;">
-    <h2>الإجابات — اضغط أي حقل لتعديله</h2>
+    <h2>بيانات الزيارة — عدّل أي حقل مباشرة</h2>
     <div id="answersList"></div>
   </div>
 
@@ -299,9 +343,13 @@
       أدخل رقم الزيارة (من ملف متابعة الزيارات اليومية). تنزيل ملف المتابعة لكل الزيارات يتم من تبويب الأرشيف.
     </div>
     <label>رقم الزيارة</label>
-    <div style="display:flex; gap:8px;">
-      <input id="visitNumInput" type="text" placeholder="مثال: SV-4413">
+    <div style="display:flex; gap:8px; align-items:center;">
+      <span class="prefixTag">SV-</span>
+      <input id="visitNumInput" type="text" inputmode="numeric" placeholder="4438">
       <button class="btn small" id="saveVisitNumBtn" style="width:auto;">حفظ</button>
+    </div>
+    <div class="sub" style="color:var(--ink-dim); font-size:11.5px; margin-top:7px;">
+      اكتب الرقم فقط — كلمة <b>SV-</b> تُضاف تلقائيًا.
     </div>
     <div id="visitNumStatus" class="meta" style="color:var(--ink-dim); font-size:12px; margin-top:8px;"></div>
   </div>
@@ -434,7 +482,7 @@ async function dbClear(){
 const CURRENT_ID_KEY = 'fieldInspectorCurrentId';
 
 function blankArticle(){
-  return { contractor:"", location:"", workType:"", workCategory:"", office:"", workOrder:"", receiver:"", source:"", executor:"", notesRaw:"", permitNum:"", workshopDone:"", visitNum:"", day:"", date:"", time:"" };
+  return { contractor:"", location:"", workType:"", workCategory:"", office:"", workOrder:"", receiver:"", source:"", executor:"", notes:[], stopWork:false, permitNum:"", workshopDone:"", visitNum:"", day:"", date:"", time:"" };
 }
 
 let state = {
@@ -511,208 +559,23 @@ const chatFlow = [
   {key:"receiver",     label:"المستلم",        q:"اسم المستلم؟"},
   {key:"source",       label:"المصدر",         q:"اسم المصدر؟"},
   {key:"executor",     label:"منفذ الزيارة",   q:"اسم منفذ الزيارة؟"},
-  {key:"notesRaw",     label:"الملاحظات",      q:"أي ملاحظات على الزيارة؟ احكيها لي عادي بدون ترقيم (أو اكتب \"لا يوجد\" إن ما فيه ملاحظات). لو تم إيقاف العمل، اذكر ذلك أول كلامك."},
   {key:"permitNum",    label:"رقم التصريح",    q:"رقم التصريح؟"},
   {key:"workshopDone", label:"ورشة توعوية",    q:"هل تم عمل ورشة توعوية؟", options:["نعم","لا"]},
 ];
 
-// Splits free-form notes text into bullet points, detects stop-work and (تم التعديل) tags
-function parseNotes(raw){
-  const result = {stopWork:false, points:[]};
-  if(!raw) return result;
-  const t = raw.trim();
-  if(!t || t === 'لا يوجد' || t === 'لايوجد' || t==='لا توجد ملاحظات') return result;
-
-  let text = t;
-  const stopPatterns = [/تم\s*إيقاف\s*العمل/, /تم\s*ايقاف\s*العمل/, /إيقاف\s*العمل/, /ايقاف\s*العمل/];
-  for(const p of stopPatterns){
-    if(p.test(text)){
-      result.stopWork = true;
-      text = text.replace(p, '').trim();
-      break;
-    }
-  }
-  // split on common separators: newline, '، ثم', period, Arabic comma followed by connector words, ' و '
-  let raw_points = text.split(/\n|(?:\.\s+)|(?:،\s*(?=[^,،]))/).map(s=>s.trim()).filter(Boolean);
-  if(raw_points.length<=1){
-    raw_points = text.split(/\s+و\s+(?=\S)/).map(s=>s.trim()).filter(Boolean);
-  }
-  raw_points = raw_points.filter(s=>s.length>1);
-  result.points = raw_points.map(p=>{
-    let closed=false;
-    if(/تم\s*التعديل/.test(p)){ closed=true; p = p.replace(/\(?\s*تم\s*التعديل\s*\)?/,'').trim(); }
-    p = p.replace(/^و\s+/,'').replace(/[،,.]+$/,'').trim();
-    return {text:p, closed};
-  }).filter(p=>p.text.length>0);
-  return result;
+// Notes are stored as objects: {id, text, closed, general}
+//  - closed  => "(تم التعديل)"  and counts as مغلقة
+//  - general => shown in the article but NOT counted, and excluded from follow-up export
+function getNotes(article){
+  const a = article || state.article;
+  const list = Array.isArray(a.notes) ? a.notes : [];
+  return {
+    stopWork: !!a.stopWork,
+    all: list,
+    counted: list.filter(n => !n.general),                 // 🔴 counted notes
+    closed:  list.filter(n => !n.general && n.closed)      // مغلقة
+  };
 }
-
-// ---------- Tabs ----------
-document.getElementById('tabs').addEventListener('click', (e)=>{
-  const btn = e.target.closest('button[data-tab]');
-  if(!btn) return;
-  document.querySelectorAll('nav.tabs button').forEach(b=>b.classList.remove('active'));
-  btn.classList.add('active');
-  document.querySelectorAll('main > section').forEach(s=>s.style.display='none');
-  document.getElementById('tab-'+btn.dataset.tab).style.display='block';
-  if(btn.dataset.tab==='followup') renderFollowup();
-  if(btn.dataset.tab==='export') renderExportTab();
-  if(btn.dataset.tab==='archive'){ renderArchive(); renderStorageInfo(); }
-});
-
-// ---------- Camera ----------
-let stream=null, currentPos=null;
-const LOGO_SRC = "data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wCEAAYGBgYHBgcICAcKCwoLCg8ODAwODxYQERAREBYiFRkVFRkVIh4kHhweJB42KiYmKjY+NDI0PkxERExfWl98fKcBBgYGBgcGBwgIBwoLCgsKDw4MDA4PFhAREBEQFiIVGRUVGRUiHiQeHB4kHjYqJiYqNj40MjQ+TERETF9aX3x8p//CABEIAMgAyAMBIgACEQEDEQH/xAAwAAEAAgMBAAAAAAAAAAAAAAAAAwQBAgUGAQEBAQEBAAAAAAAAAAAAAAAAAQIDBP/aAAwDAQACEAMQAAAC9UAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAxGkjXmWdXPE7RkTQAAAADXi889Lv5W2ejcbpE7TnHR8tY7HTHlvYQUd5z0OV3Ma2HPYAAADm3fKGLOuSSZrZPskJK1qtLV3hyQd7zttLN7m9TUtjOgAAAOdW7Q49X0Q4G/V55tu3RXs1ypFL0jg9DuZXi79cAAAAAAAMZFPW7UNYZ7KYlFAAAAAEBO58pbBjGcGNNoDeKbBBPjYztya3THoc8rq41ljMpikl5VsmQqldqk1S3SJdIbBmLOpZj1rk+Z6xhnJd836bzPbl6Lh9bz5dmpx7ksnT5ubXuWOVZ6cebsilVQmsiOreENe8INbI5a3MVdpNCSjc1s353SjKc9gnKtWsVHDb2lmEoAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAH/xAAC/9oADAMBAAIAAwAAACEAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA3WcAAAAABRoQT2moAAAAAwjVW4YdoAAAADCIbWdehAAAAAAAACjGAAAAAAQgDxzigUgg4UBBwDRhDifsK4oIBCCABBxTBNWoAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAD/8QAAv/aAAwDAQACAAMAAAAQ888888888888888888888888888888888o7j8888880o08uAt888880axpc8SC88888McQjthAs88888888gnc888884w8ocE82d4BG844wUYEUp4gKDA8ss84wkFqR4t8888888888888888888888888888888888888888//EACsRAAIBAgQEBAcAAAAAAAAAAAIDBAABBRITMhARIjAjUGKBFCAhQFJyc//aAAgB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";
-const logoImg = new Image();
-logoImg.src = LOGO_SRC;
-async function initCamera(){
-  try{
-    stream = await navigator.mediaDevices.getUserMedia({video:{facingMode:'environment', width:{ideal:3840}, height:{ideal:2160}}, audio:false});
-    setupFlash(stream);
-    document.getElementById('video').srcObject = stream;
-    document.getElementById('camHint').textContent = 'جاري تحديد الموقع...';
-  }catch(err){
-    document.getElementById('camHint').textContent = 'تعذر الوصول للكاميرا — تأكد من صلاحيات المتصفح';
-  }
-  navigator.geolocation?.getCurrentPosition(async pos=>{
-    currentPos = {lat:pos.coords.latitude, lon:pos.coords.longitude};
-    document.getElementById('camHint').textContent = 'الموقع محدد — جاهز للتصوير';
-    try{
-      const r = await fetch(`https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${currentPos.lat}&lon=${currentPos.lon}&accept-language=ar&zoom=16`);
-      const j = await r.json();
-      const addr = j.address || {};
-      const district = addr.suburb || addr.neighbourhood || addr.quarter || addr.city_district || '';
-      const city = addr.city || addr.town || addr.municipality || addr.county || '';
-      currentPos.place = [district, city].filter(Boolean).join('، ');
-    }catch(e){ currentPos.place=''; }
-  }, ()=>{
-    document.getElementById('camHint').textContent = 'تعذر تحديد الموقع — سيتم التصوير بدون إحداثيات';
-  }, {enableHighAccuracy:true, timeout:8000});
-}
-initCamera();
-
-// Track device orientation angle for watermark rotation
-let deviceAngle = 0;
-function updateAngle(){
-  const a = (screen.orientation && typeof screen.orientation.angle === 'number') ? screen.orientation.angle : (window.orientation || 0);
-  deviceAngle = ((a % 360) + 360) % 360;
-}
-updateAngle();
-window.addEventListener('orientationchange', ()=> setTimeout(updateAngle, 100));
-if(screen.orientation) screen.orientation.addEventListener('change', updateAngle);
-
-// Shutter sound — synthesized iPhone-style mechanical double click
-let _audioCtx = null;
-function playShutter(){
-  try{
-    _audioCtx = _audioCtx || new (window.AudioContext||window.webkitAudioContext)();
-    const ctx = _audioCtx;
-    if(ctx.state === 'suspended') ctx.resume();
-    const t0 = ctx.currentTime;
-
-    // A short filtered noise burst = the mechanical "clack"
-    function clack(at, gainVal, dur, filterFreq){
-      const bufLen = Math.floor(ctx.sampleRate * dur);
-      const buf = ctx.createBuffer(1, bufLen, ctx.sampleRate);
-      const data = buf.getChannelData(0);
-      for(let i=0;i<bufLen;i++){
-        // decaying noise
-        data[i] = (Math.random()*2-1) * Math.pow(1 - i/bufLen, 2.2);
-      }
-      const src = ctx.createBufferSource();
-      src.buffer = buf;
-      const bp = ctx.createBiquadFilter();
-      bp.type = 'bandpass';
-      bp.frequency.value = filterFreq;
-      bp.Q.value = 0.8;
-      const g = ctx.createGain();
-      g.gain.value = gainVal;
-      src.connect(bp); bp.connect(g); g.connect(ctx.destination);
-      src.start(at);
-      src.stop(at + dur);
-    }
-    // iPhone shutter = two quick clicks (open + close), the 2nd a touch softer
-    clack(t0, 0.5, 0.045, 2600);
-    clack(t0 + 0.085, 0.38, 0.055, 1900);
-  }catch(e){}
-}
-
-document.getElementById('shutterBtn').addEventListener('click', ()=>{
-  const video = document.getElementById('video');
-  const canvas = document.getElementById('captureCanvas');
-  // native sensor dimensions — no stretching, keeps true aspect ratio
-  canvas.width = video.videoWidth || 1280;
-  canvas.height = video.videoHeight || 720;
-  const ctx = canvas.getContext('2d');
-  ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-
-  playShutter();
-
-  const W = canvas.width, H = canvas.height;
-  const now = new Date();
-  const timeSec = `${formatTime24(now)}:${String(now.getSeconds()).padStart(2,'0')}`;
-  const dateYMD = `${now.getFullYear()}/${String(now.getMonth()+1).padStart(2,'0')}/${String(now.getDate()).padStart(2,'0')}`;
-  const timeDateStr = `${timeSec} ${dateYMD}`;
-  const coordStr = currentPos ? `${currentPos.lat.toFixed(8)}N ${currentPos.lon.toFixed(8)}E` : '';
-  const placeStr = currentPos?.place || 'الموقع غير متوفر';
-
-  // Reference size for scaling text/logo, based on the shorter side so it looks right in any orientation
-  const ref = Math.min(W, H);
-  const logoW = Math.round(ref*0.20);
-  const logoH = logoImg.naturalWidth ? Math.round(logoW * (logoImg.naturalHeight/logoImg.naturalWidth)) : Math.round(logoW*0.4);
-  const fontSize1 = Math.round(ref*0.05);
-  const fontSize2 = Math.round(ref*0.042);
-  const lineGap = Math.round(ref*0.06);
-  const pad = Math.round(ref*0.02);
-
-  function outlinedText(text, x, y, size, align){
-    ctx.textAlign = align || 'right';
-    ctx.font = `bold ${size}px sans-serif`;
-    ctx.lineWidth = Math.max(2, Math.round(size*0.12));
-    ctx.strokeStyle = 'rgba(0,0,0,0.85)';
-    ctx.fillStyle = '#ffffff';
-    ctx.strokeText(text, x, y);
-    ctx.fillText(text, x, y);
-  }
-
-  // Draw overlays inside a rotated coordinate system so they align with how the phone was held.
-  // We rotate around the canvas centre by the device angle, then draw as if in that orientation.
-  ctx.save();
-  ctx.translate(W/2, H/2);
-  ctx.rotate(deviceAngle * Math.PI/180);
-  // After rotating, the visual width/height swap for 90/270
-  let vw = W, vh = H;
-  if(deviceAngle === 90 || deviceAngle === 270){ vw = H; vh = W; }
-  // Work in a top-left origin of the rotated frame
-  ctx.translate(-vw/2, -vh/2);
-
-  // logo flush to top-right corner (no margin)
-  if(logoImg.complete && logoImg.naturalWidth){
-    ctx.save();
-    ctx.globalAlpha = 0.5;
-    ctx.drawImage(logoImg, vw-logoW, 0, logoW, logoH);
-    ctx.restore();
-  }
-
-  // time/coord/place bottom-right
-  const yPlace = vh - pad;
-  const yCoord = yPlace - lineGap;
-  const yTime = yCoord - lineGap;
-  outlinedText(placeStr, vw-pad, yPlace, fontSize2, 'right');
-  if(coordStr) outlinedText(coordStr, vw-pad, yCoord, fontSize2, 'right');
-  outlinedText(timeDateStr, vw-pad, yTime, fontSize1, 'right');
-  ctx.restore();
-
-  const dataUrl = canvas.toDataURL('image/jpeg', 0.92);
-  const tag = document.getElementById('photoTag').value;
-  const photo = {id:Date.now()+Math.random(), dataUrl, thumb:null, tag, time:timeSec, lat:currentPos?.lat, lon:currentPos?.lon, place:placeStr};
-  state.photos.push(photo);
-  renderThumbs();
-  // build a small thumbnail in the background so the list stays light
-  makeThumb(dataUrl).then(t=>{ photo.thumb = t; renderThumbs(); autosave(); });
-  autosave();
-  toast('تم حفظ الصورة');
-});
 
 // ---------- Import photos from the device gallery ----------
 document.getElementById('galleryBtn').addEventListener('click', ()=> document.getElementById('galleryInput').click());
@@ -733,7 +596,7 @@ document.getElementById('galleryInput').addEventListener('change', async (e)=>{
     if(!dataUrl) continue;
     const now = new Date();
     const timeSec = `${formatTime24(now)}:${String(now.getSeconds()).padStart(2,'0')}`;
-    const photo = {id:Date.now()+Math.random(), dataUrl, thumb:null, tag, time:timeSec, lat:null, lon:null, place:'', imported:true};
+    const photo = {id:Date.now()+Math.random(), dataUrl, thumb:null, tag, time:timeSec};
     photo.thumb = await makeThumb(dataUrl);
     state.photos.push(photo);
   }
@@ -742,36 +605,6 @@ document.getElementById('galleryInput').addEventListener('change', async (e)=>{
   renderThumbs();
   autosave();
   toast('تمت إضافة الصور');
-});
-
-// ---------- Flash / torch ----------
-let torchTrack = null, torchOn = false;
-function setupFlash(stream){
-  const btn = document.getElementById('flashBtn');
-  try{
-    const track = stream.getVideoTracks()[0];
-    const caps = track.getCapabilities ? track.getCapabilities() : {};
-    if(caps && caps.torch){
-      torchTrack = track;
-      btn.classList.remove('hidden');
-    } else {
-      btn.classList.add('hidden');   // device/browser doesn't expose the flash
-    }
-  }catch(e){
-    document.getElementById('flashBtn').classList.add('hidden');
-  }
-}
-document.getElementById('flashBtn').addEventListener('click', async ()=>{
-  if(!torchTrack){ toast('الفلاش غير مدعوم على هذا الجهاز'); return; }
-  torchOn = !torchOn;
-  try{
-    await torchTrack.applyConstraints({ advanced: [{ torch: torchOn }] });
-    document.getElementById('flashBtn').classList.toggle('on', torchOn);
-  }catch(e){
-    torchOn = false;
-    document.getElementById('flashBtn').classList.remove('on');
-    toast('تعذّر تشغيل الفلاش');
-  }
 });
 
 // Small preview version used only for on-screen lists (full image kept for PDF/download)
@@ -805,7 +638,7 @@ function renderThumbs(){
       <img src="${p.thumb || p.dataUrl}" data-id="${p.id}" class="openLb">
       <div class="thumbBar">
         <select data-id="${p.id}">
-          <option value="site" ${p.tag==='site'?'selected':''}>موقع</option>
+          <option value="site" ${p.tag==='site'?'selected':''}>موقع عام</option>
           <option value="violation" ${p.tag==='violation'?'selected':''}>ملاحظة</option>
           <option value="checklist" ${p.tag==='checklist'?'selected':''}>فحص</option>
           <option value="workshop" ${p.tag==='workshop'?'selected':''}>ورشة توعوية</option>
@@ -826,7 +659,7 @@ function renderThumbs(){
     const link = document.createElement('a');
     link.href = p.dataUrl;
     const wo = state.article.workOrder || 'صورة';
-    link.download = `${wo}-${p.time.replace(/:/g,'')}.jpg`;
+    link.download = `${wo}-${(p.time||'').replace(/:/g,'')}.jpg`;
     link.click();
     toast('تم تحميل الصورة');
   }));
@@ -841,7 +674,7 @@ function renderThumbs(){
   }));
 }
 
-// ---------- Sort mode: compact grid, drag to reorder, no accidental triggers ----------
+// ---------- Sort mode: compact grid, drag to reorder ----------
 let sortMode = false;
 function toggleSortMode(on){
   sortMode = on;
@@ -874,10 +707,7 @@ function setupSortDrag(g){
     const el = document.elementFromPoint(pt.x, pt.y);
     return el ? el.closest('.sortItem') : null;
   }
-  function start(e, item){
-    dragEl = item;
-    item.classList.add('dragging');
-  }
+  function start(e, item){ dragEl = item; item.classList.add('dragging'); }
   function move(e){
     if(!dragEl) return;
     e.preventDefault();
@@ -910,68 +740,179 @@ function setupSortDrag(g){
 document.getElementById('sortToggleBtn').addEventListener('click', ()=> toggleSortMode(true));
 document.getElementById('sortDoneBtn').addEventListener('click', ()=> toggleSortMode(false));
 
-// ---------- Editable answers ----------
-let editingKey = null;   // when set, the next submitted answer overwrites this field only
+// ---------- Notes builder ----------
+const QUICK_KEY = 'fieldInspectorQuickNotes';
+const DEFAULT_QUICK = [
+  "عدم ارتداء مهمات الوقاية الشخصية",
+  "عزل الموقع غير جيد",
+  "بطاقات الأمن الصناعي منتهية",
+  "عدم وجود تصريح عمل بالموقع",
+  "حواجز الحماية غير مكتملة",
+  "عدم وجود طفاية حريق صالحة",
+  "مخلفات لم تُزل من الموقع",
+  "نسخة التصريح غير موجودة"
+];
+function getQuickNotes(){
+  try{ const v = JSON.parse(localStorage.getItem(QUICK_KEY)); if(Array.isArray(v) && v.length) return v; }catch(e){}
+  return DEFAULT_QUICK;
+}
+function saveQuickNotes(list){ try{ localStorage.setItem(QUICK_KEY, JSON.stringify(list)); }catch(e){} }
 
+function ensureNotes(){
+  if(!Array.isArray(state.article.notes)) state.article.notes = [];
+  return state.article.notes;
+}
+function addNote(text, opts){
+  const t = (text||'').trim();
+  if(!t) return;
+  ensureNotes().push(Object.assign({ id: Date.now()+Math.random(), text: t, closed:false, general:false }, opts||{}));
+  renderNotes();
+  if(state.chatDone) renderArticle();
+  autosave();
+}
+
+function renderQuickNotes(){
+  const wrap = document.getElementById('quickNotes');
+  wrap.innerHTML = getQuickNotes().map((q,i)=>`<span class="qchip" data-i="${i}">${q}</span>`).join('');
+  wrap.querySelectorAll('.qchip').forEach(c=>c.addEventListener('click', ()=>{
+    addNote(getQuickNotes()[parseInt(c.dataset.i)]);
+    toast('تمت إضافة الملاحظة');
+  }));
+}
+
+function renderNotes(){
+  const list = ensureNotes();
+  const wrap = document.getElementById('notesList');
+  document.getElementById('notesEmpty').style.display = list.length ? 'none' : 'block';
+
+  let countedIdx = 0;
+  wrap.innerHTML = list.map((n, i)=>{
+    const num = n.general ? '—' : (++countedIdx);
+    return `<div class="noteCard ${n.general?'general':''} ${(!n.general && n.closed)?'closed':''}" data-i="${i}">
+      <div class="noteTop">
+        <span class="idx">${num}</span>
+        <span class="txt" data-i="${i}">${n.text}</span>
+      </div>
+      <div class="noteActs">
+        <button class="tgClosed ${(!n.general && n.closed)?'active':''}" data-i="${i}">تم التعديل</button>
+        <button class="tgGeneral ${n.general?'active':''}" data-i="${i}">عامة (لا تُحتسب)</button>
+        <button class="up" data-i="${i}">▲</button>
+        <button class="down" data-i="${i}">▼</button>
+        <button class="del" data-i="${i}">حذف</button>
+      </div>
+    </div>`;
+  }).join('');
+
+  const n = getNotes();
+  document.getElementById('notesSummary').innerHTML =
+    `<span>عدد الملاحظات المحتسبة</span><span>${n.counted.length} — المغلقة: ${n.closed.length}</span>`;
+
+  // inline text editing
+  wrap.querySelectorAll('.txt').forEach(el=>el.addEventListener('click', ()=>{
+    const i = parseInt(el.dataset.i);
+    const cur = list[i].text;
+    el.innerHTML = `<input type="text" value="${cur.replace(/"/g,'&quot;')}">`;
+    const inp = el.querySelector('input');
+    inp.focus(); inp.select();
+    const commit = ()=>{
+      const v = inp.value.trim();
+      if(v) list[i].text = v;
+      renderNotes();
+      if(state.chatDone) renderArticle();
+      autosave();
+    };
+    inp.addEventListener('blur', commit);
+    inp.addEventListener('keydown', e=>{ if(e.key==='Enter'){ e.preventDefault(); inp.blur(); } });
+  }));
+
+  wrap.querySelectorAll('.tgClosed').forEach(b=>b.addEventListener('click', ()=>{
+    const i = parseInt(b.dataset.i);
+    list[i].closed = !list[i].closed;
+    if(list[i].closed) list[i].general = false;   // a closed note is a counted note
+    renderNotes(); if(state.chatDone) renderArticle(); autosave();
+  }));
+  wrap.querySelectorAll('.tgGeneral').forEach(b=>b.addEventListener('click', ()=>{
+    const i = parseInt(b.dataset.i);
+    list[i].general = !list[i].general;
+    if(list[i].general) list[i].closed = false;
+    renderNotes(); if(state.chatDone) renderArticle(); autosave();
+  }));
+  wrap.querySelectorAll('.del').forEach(b=>b.addEventListener('click', ()=>{
+    list.splice(parseInt(b.dataset.i),1);
+    renderNotes(); if(state.chatDone) renderArticle(); autosave();
+  }));
+  wrap.querySelectorAll('.up, .down').forEach(b=>b.addEventListener('click', ()=>{
+    const i = parseInt(b.dataset.i);
+    const j = b.classList.contains('up') ? i-1 : i+1;
+    if(j<0 || j>=list.length) return;
+    const t = list[i]; list[i] = list[j]; list[j] = t;
+    renderNotes(); if(state.chatDone) renderArticle(); autosave();
+  }));
+}
+
+document.getElementById('addNoteBtn').addEventListener('click', ()=>{
+  const inp = document.getElementById('noteInput');
+  addNote(inp.value);
+  inp.value = '';
+  inp.focus();
+});
+document.getElementById('noteInput').addEventListener('keydown', e=>{
+  if(e.key === 'Enter'){ e.preventDefault(); document.getElementById('addNoteBtn').click(); }
+});
+document.getElementById('stopWorkSw').addEventListener('click', ()=>{
+  state.article.stopWork = !state.article.stopWork;
+  document.getElementById('stopWorkSw').classList.toggle('on', state.article.stopWork);
+  if(state.chatDone) renderArticle();
+  autosave();
+});
+function renderStopWork(){
+  document.getElementById('stopWorkSw').classList.toggle('on', !!state.article.stopWork);
+}
+
+// ---------- Editable answers: inline form, live article update ----------
 function renderAnswers(){
   const panel = document.getElementById('answersPanel');
   const list  = document.getElementById('answersList');
-  const answered = chatFlow.filter((st, i) =>
-    (i < state.chatStep || state.chatDone) &&
-    !(st.skipIf && st.skipIf(state.article)) &&
-    (state.article[st.key] || '').toString().trim() !== ''
-  );
-  if(!answered.length){ panel.style.display='none'; list.innerHTML=''; return; }
+  const fields = chatFlow.filter(st => !(st.skipIf && st.skipIf(state.article)));
+  const anyAnswered = fields.some(st => String(state.article[st.key]||'').trim() !== '');
+  if(!anyAnswered && !state.chatDone){ panel.style.display='none'; list.innerHTML=''; return; }
   panel.style.display='block';
-  list.innerHTML = answered.map(st=>{
-    const v = String(state.article[st.key]);
-    const short = v.length > 60 ? v.slice(0,60)+'…' : v;
-    return `<div class="ansRow ${editingKey===st.key?'editing':''}" data-key="${st.key}">
-      <span class="lbl">${st.label || st.q.replace(/[؟?].*$/,'')}</span>
-      <span class="val">${short}</span>
-      <span class="edit">✎</span>
+
+  list.innerHTML = fields.map(st=>{
+    const val = state.article[st.key] || '';
+    if(st.options){
+      const opts = st.options.map(o=>
+        `<button class="optBtn ${val===o?'active':''}" data-key="${st.key}" data-val="${o}">${o}</button>`
+      ).join('');
+      return `<div class="fRow">
+        <span class="fLbl">${st.label}</span>
+        <div class="fOpts">${opts}</div>
+      </div>`;
+    }
+    return `<div class="fRow">
+      <span class="fLbl">${st.label}</span>
+      <input class="fInp" data-key="${st.key}" type="text" value="${String(val).replace(/"/g,'&quot;')}" placeholder="—">
     </div>`;
   }).join('');
-  list.querySelectorAll('.ansRow').forEach(r=>r.addEventListener('click', ()=> beginEdit(r.dataset.key)));
-}
 
-function beginEdit(key){
-  const step = chatFlow.find(s=>s.key===key);
-  if(!step) return;
-  editingKey = key;
-  renderAnswers();
-  chatBubble(`تعديل: ${step.label || step.q}`, 'bot');
-  if(step.options){
-    renderOptions(step);
-    document.getElementById('chatInput').parentElement.style.display='none';
-  } else {
-    clearOptions();
-    const row = document.getElementById('chatInput').parentElement;
-    row.style.display='';
-    const input = document.getElementById('chatInput');
-    input.value = state.article[key] || '';
-    input.focus();
-  }
-}
-
-function finishEdit(val){
-  const key = editingKey;
-  state.article[key] = val;
-  editingKey = null;
-  if(key === 'workCategory' && state.article.workCategory === 'إنشاءات'){
-    state.article.office = 'خريص';
-  }
-  chatBubble('تم التعديل.', 'bot');
-  renderAnswers();
-  if(state.chatDone){
-    renderArticle();
-    clearOptions();
-    document.getElementById('chatInput').parentElement.style.display='';
-  } else {
-    updateChatInputMode();
-    setTimeout(()=> chatBubble(chatFlow[state.chatStep].q, 'bot'), 150);
-  }
-  autosave();
+  // typing updates the article immediately
+  list.querySelectorAll('.fInp').forEach(inp=>{
+    inp.addEventListener('input', ()=>{
+      state.article[inp.dataset.key] = inp.value;
+      if(state.chatDone) renderArticle();
+      autosave();
+    });
+  });
+  list.querySelectorAll('.optBtn').forEach(b=>{
+    b.addEventListener('click', ()=>{
+      const key = b.dataset.key;
+      state.article[key] = b.dataset.val;
+      if(key === 'workCategory' && b.dataset.val === 'إنشاءات') state.article.office = 'خريص';
+      renderAnswers();
+      if(state.chatDone) renderArticle();
+      autosave();
+    });
+  });
 }
 
 // ---------- Chat article builder ----------
@@ -1006,7 +947,6 @@ function clearOptions(){
 }
 // Toggle the free-text input vs option buttons based on the current step
 function updateChatInputMode(){
-  if(editingKey) return;   // an edit is in progress; leave the input as-is
   const step = chatFlow[state.chatStep];
   const inputRow = document.getElementById('chatInput').parentElement;
   if(step && step.options){
@@ -1062,6 +1002,8 @@ function startChat(){
     if(state.savedArticleText){ document.getElementById('articleText').value = state.savedArticleText; }
     chatBubble('المقال محفوظ لهذه الزيارة. تقدر تعدّل أي حقل من قائمة الإجابات فوق.', 'bot');
     renderAnswers();
+    renderNotes();
+    renderStopWork();
     return;
   }
   if(state.chatStep > 0){
@@ -1073,11 +1015,15 @@ function startChat(){
     chatBubble(chatFlow[state.chatStep].q, 'bot');
     updateChatInputMode();
     renderAnswers();
+    renderNotes();
+    renderStopWork();
     return;
   }
   chatBubble('يلا نبدأ تجهيز المقال. '+chatFlow[0].q, 'bot');
   updateChatInputMode();
   renderAnswers();
+  renderNotes();
+  renderStopWork();
 }
 function resetChatFresh(){
   document.getElementById('chatlog').innerHTML='';
@@ -1088,10 +1034,11 @@ function resetChatFresh(){
   state.article = blankArticle();
   state.savedArticleText = '';
   document.getElementById('articlePreviewPanel').style.display='none';
-  editingKey = null;
   chatBubble('يلا نبدأ تجهيز المقال. '+chatFlow[0].q, 'bot');
   updateChatInputMode();
   renderAnswers();
+  renderNotes();
+  renderStopWork();
 }
 document.getElementById('chatSend').addEventListener('click', ()=>{
   const input = document.getElementById('chatInput');
@@ -1106,7 +1053,6 @@ document.getElementById('chatInput').addEventListener('keydown', e=>{
 function submitAnswer(val){
   clearOptions();
   chatBubble(val, 'user');
-  if(editingKey){ finishEdit(val); return; }   // editing a single field
   if(state.chatDone) return;
   const step = chatFlow[state.chatStep];
   state.article[step.key] = val;
@@ -1116,16 +1062,16 @@ function submitAnswer(val){
 }
 function renderArticle(){
   const a = state.article;
-  const parsed = parseNotes(a.notesRaw);
-  const totalCount = parsed.points.length;
-  const closedCount = parsed.points.filter(p=>p.closed).length;
+  const n = getNotes(a);
+  const totalCount = n.counted.length;
+  const closedCount = n.closed.length;
 
   let redSection = '';
-  if(parsed.stopWork || totalCount>0){
+  if(n.stopWork || n.all.length>0){
     const lines = [];
-    if(parsed.stopWork) lines.push('(تم إيقاف العمل)');
-    parsed.points.forEach(p=>{
-      lines.push(`- ${p.text}${p.closed ? ' (تم التعديل)' : ''}`);
+    if(n.stopWork) lines.push('(تم إيقاف العمل)');
+    n.all.forEach(note=>{
+      lines.push(`- ${note.text}${note.closed && !note.general ? ' (تم التعديل)' : ''}`);
     });
     redSection = lines.join('\n');
   }
@@ -1167,11 +1113,11 @@ document.getElementById('copyArticle').addEventListener('click', ()=>{
 
 // ---------- Follow-up tracking (متابعة الملاحظات) ----------
 function renderFollowup(){
-  document.getElementById('visitNumInput').value = state.article.visitNum || '';
+  document.getElementById('visitNumInput').value = (state.article.visitNum || '').replace(/^SV-/i, '');
   document.getElementById('visitNumStatus').textContent =
     state.article.visitNum ? `رقم الزيارة المحفوظ: ${state.article.visitNum}` : 'لم يتم إدخال رقم الزيارة بعد.';
 
-  const parsed = parseNotes(state.article.notesRaw);
+  const parsed = { points: getNotes(state.article).counted };
   const wrap = document.getElementById('followupPreview');
   if(!parsed.points.length){
     wrap.innerHTML = '<div class="empty">لا توجد ملاحظات لهذه الزيارة</div>';
@@ -1185,7 +1131,9 @@ function renderFollowup(){
   }).join('');
 }
 document.getElementById('saveVisitNumBtn').addEventListener('click', ()=>{
-  const val = document.getElementById('visitNumInput').value.trim();
+  let num = document.getElementById('visitNumInput').value.trim();
+  num = num.replace(/^\s*SV\s*-?\s*/i, '');           // tolerate a typed "SV-"
+  const val = num ? `SV-${num}` : '';
   state.article.visitNum = val;
   autosave();
   renderFollowup();
@@ -1203,7 +1151,7 @@ document.getElementById('exportAllFollowupBtn').addEventListener('click', async 
   let skipped = 0;
   list.forEach(v=>{
     const a = v.article || {};
-    const parsed = parseNotes(a.notesRaw);
+    const parsed = { points: getNotes(a).counted };
     if(!a.visitNum || !parsed.points.length){
       if(parsed.points.length && !a.visitNum) skipped++;
       return;
@@ -1240,7 +1188,7 @@ document.getElementById('exportAllFollowupBtn').addEventListener('click', async 
 function renderExportTab(){
   document.getElementById('expPhotoCount').textContent = state.photos.length;
   document.getElementById('expArticleStatus').textContent = state.chatDone ? 'جاهز' : 'غير مكتمل';
-  document.getElementById('expViolCount').textContent = parseNotes(state.article.notesRaw).points.length;
+  document.getElementById('expViolCount').textContent = getNotes(state.article).counted.length;
 }
 
 // Re-encodes a dataUrl through a canvas at a given max width and JPEG quality
@@ -1398,7 +1346,7 @@ async function renderArchive(){
         <span class="title">${a.contractor || 'بدون اسم'} — ${a.workOrder || '—'} ${statusLabel}</span>
         <span class="meta">${a.date || ''} ${a.time || ''}</span>
       </div>
-      <div class="meta">${a.location || ''} · ${(v.photos||[]).length} صور · ${parseNotes(a.notesRaw).points.length} ملاحظات</div>
+      <div class="meta">${a.location || ''} · ${(v.photos||[]).length} صور · ${getNotes(a).counted.length} ملاحظات</div>
       <div class="actions">
         <button class="btn secondary small open-btn" data-id="${v.id}">فتح الزيارة</button>
         <button class="btn secondary small copy-btn" data-id="${v.id}">نسخ النص</button>
@@ -1451,8 +1399,7 @@ document.getElementById('exportExcelBtn').addEventListener('click', async ()=>{
   const rows = list.map((v,i)=>{
     const a = v.article || {};
     // detect stop-work from the notes text
-    const notes = a.notesRaw || '';
-    const stopWork = /(تم\s*)?(إيقاف|ايقاف)\s*العمل/.test(notes) ? "نعم" : "";
+    const stopWork = a.stopWork ? "نعم" : "";
     const workshop = a.workshopDone === "نعم" ? "نعم" : (a.workshopDone === "لا" ? "لا" : "");
     return [ i+1, "التصميم الفني", a.executor||"", a.date||"", a.location||"", a.contractor||"", a.workOrder||"", a.source||"", a.receiver||"", a.permitNum||"", a.workType||"", "", workshop, stopWork ];
   });
@@ -1614,6 +1561,7 @@ function toast(msg){
     state.id = 'v' + Date.now();
   }
   renderThumbs();
+  renderQuickNotes();
   startChat();
   renderExportTab();
   // build thumbnails for any older photos that don't have one yet
