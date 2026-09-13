@@ -577,6 +577,19 @@ function getNotes(article){
   };
 }
 
+// ---------- Tabs ----------
+document.getElementById('tabs').addEventListener('click', (e)=>{
+  const btn = e.target.closest('button[data-tab]');
+  if(!btn) return;
+  document.querySelectorAll('nav.tabs button').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  document.querySelectorAll('main > section').forEach(s=>s.style.display='none');
+  document.getElementById('tab-'+btn.dataset.tab).style.display='block';
+  if(btn.dataset.tab==='export') renderExportTab();
+  if(btn.dataset.tab==='followup') renderFollowup();
+  if(btn.dataset.tab==='archive'){ renderArchive(); renderStorageInfo(); }
+});
+
 // ---------- Import photos from the device gallery ----------
 document.getElementById('galleryBtn').addEventListener('click', ()=> document.getElementById('galleryInput').click());
 document.getElementById('galleryInput').addEventListener('change', async (e)=>{
