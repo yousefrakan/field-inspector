@@ -237,6 +237,7 @@
   <button data-tab="camera" class="active"><span data-i18n="tab_photos">🖼️ الصور</span></button>
   <button data-tab="chat"><span data-i18n="tab_article">📝 المقال</span></button>
   <button data-tab="export"><span data-i18n="tab_export">📦 التصدير</span></button>
+  <button data-tab="daily"><span data-i18n="tab_daily">🗓️ Daily work</span></button>
   <button data-tab="followup"><span data-i18n="tab_followup">📋 متابعة الملاحظات</span></button>
   <button data-tab="archive"><span data-i18n="tab_archive">🗄️ الأرشيف</span></button>
 </nav>
@@ -345,6 +346,45 @@
       لما تخلص الزيارة، اضغط الزر تحت لإنهائها وبدء زيارة جديدة فاضية.
     </div>
     <button class="btn" id="endVisitBtn" data-i18n="b_endvisit">إنهاء الزيارة الحالية وبدء زيارة جديدة</button>
+  </div>
+</section>
+
+<!-- FOLLOW-UP TAB -->
+<section id="tab-daily" style="display:none;">
+  <div class="panel">
+    <h2 data-i18n="h_daily">Daily work</h2>
+    <div class="sub" style="color:var(--ink-dim); font-size:12px; margin-bottom:10px;" data-i18n="daily_hint">
+      أدخل رقم المستلم فقط — باقي البيانات تُؤخذ من المقال، والتاريخ والموقع تلقائيًا.
+    </div>
+
+    <label data-i18n="l_recvnum">رقم المستلم</label>
+    <div style="display:flex; gap:8px; align-items:center;">
+      <input id="recvNumInput" type="tel" inputmode="numeric" placeholder="05XXXXXXXX">
+      <button class="btn small" id="saveRecvNumBtn" style="width:auto;" data-i18n="b_save">حفظ</button>
+    </div>
+    <div id="recvNumStatus" class="meta" style="color:var(--ink-dim); font-size:12px; margin-top:8px;"></div>
+
+    <div style="display:flex; gap:8px; margin-top:12px;">
+      <button class="btn secondary" id="dailyLocBtn" style="flex:1;" data-i18n="b_getloc">📍 تحديد الموقع الحالي</button>
+    </div>
+
+    <label style="margin-top:12px;" data-i18n="l_pastelink">أو الصق رابط الموقع</label>
+    <div style="display:flex; gap:8px;">
+      <input id="dailyLinkInput" type="text" placeholder="https://maps.app.goo.gl/...">
+      <button class="btn small" id="pasteDailyLinkBtn" style="width:auto;" data-i18n="b_paste">لصق</button>
+      <button class="btn small" id="saveDailyLinkBtn" style="width:auto;" data-i18n="b_save">حفظ</button>
+    </div>
+    <div class="sub" style="color:var(--ink-dim); font-size:11.5px; margin-top:7px;" data-i18n="link_hint">
+      الرابط الملصق له الأولوية على الموقع التلقائي. لمسحه، فرّغ الخانة واضغط حفظ.
+    </div>
+
+    <div id="dailyLocStatus" class="meta" style="color:var(--ink-dim); font-size:12px; margin-top:8px;"></div>
+  </div>
+
+  <div class="panel" id="dailyOutPanel" style="display:none;">
+    <h2 data-i18n="h_dailyout">Daily work — جاهز للنسخ</h2>
+    <textarea id="dailyText" class="mono" style="width:100%; min-height:220px; white-space:pre-wrap; font-size:12.5px; background:var(--asphalt); padding:12px; border-radius:8px; border:1px solid var(--line); color:var(--ink); resize:vertical;"></textarea>
+    <button class="btn secondary" style="margin-top:10px;" id="copyDailyBtn" data-i18n="b_copydaily">نسخ النص</button>
   </div>
 </section>
 
@@ -495,7 +535,7 @@ async function dbClear(){
 const CURRENT_ID_KEY = 'fieldInspectorCurrentId';
 
 function blankArticle(){
-  return { contractor:"", location:"", workType:"", workCategory:"", office:"", workOrder:"", receiver:"", source:"", executor:"", notes:[], stopWork:false, permitNum:"", workshopDone:"", visitNum:"", day:"", date:"", time:"" };
+  return { contractor:"", location:"", workType:"", workCategory:"", office:"", workOrder:"", receiver:"", source:"", executor:"", notes:[], stopWork:false, permitNum:"", workshopDone:"", visitNum:"", receiverNum:"", dailyLat:null, dailyLon:null, dailyPlace:"", dailyLocLink:"", day:"", date:"", time:"" };
 }
 
 let state = {
@@ -600,6 +640,7 @@ const I18N = {
   tab_photos:   "🖼️ Photos",
   tab_article:  "📝 Report",
   tab_export:   "📦 Export",
+  tab_daily:    "🗓️ Daily work",
   tab_followup: "📋 Notes Follow-up",
   tab_archive:  "🗄️ Archive",
 
@@ -610,6 +651,15 @@ const I18N = {
   h_status:    "Visit status",
   h_pdf:       "PDF files",
   h_current:   "Current visit",
+  h_daily:     "Daily work",
+  h_dailyout:  "Daily work — ready to copy",
+  daily_hint:  "Enter the receiver's number only — the rest is taken from the report, with date and location filled automatically.",
+  l_recvnum:   "Receiver number",
+  b_getloc:    "📍 Capture current location",
+  b_copydaily: "Copy text",
+  l_pastelink: "Or paste a location link",
+  b_paste:     "Paste",
+  link_hint:   "A pasted link takes priority over the auto-captured location. To remove it, clear the box and press Save.",
   h_followup:  "Notes follow-up",
   h_thisnotes: "Notes for this visit",
   h_saved:     "Saved visits",
@@ -678,6 +728,7 @@ function applyLang(){
   renderQuickNotes();
   renderNotes();
   renderAnswers();
+  renderDaily();
   renderFollowup();
 }
 document.getElementById('langBtn').addEventListener('click', ()=>{
@@ -695,6 +746,7 @@ document.getElementById('tabs').addEventListener('click', (e)=>{
   document.querySelectorAll('main > section').forEach(s=>s.style.display='none');
   document.getElementById('tab-'+btn.dataset.tab).style.display='block';
   if(btn.dataset.tab==='export') renderExportTab();
+  if(btn.dataset.tab==='daily') renderDaily();
   if(btn.dataset.tab==='followup') renderFollowup();
   if(btn.dataset.tab==='archive'){ renderArchive(); renderStorageInfo(); }
 });
@@ -1363,6 +1415,131 @@ document.getElementById('copyArticle').addEventListener('click', ()=>{
   navigator.clipboard.writeText(document.getElementById('articleText').value);
   toast('تم نسخ نص المقال');
 });
+
+// ---------- Daily work ----------
+function renderDaily(){
+  const a = state.article;
+  document.getElementById('recvNumInput').value = a.receiverNum || '';
+  document.getElementById('recvNumStatus').textContent = a.receiverNum
+    ? (lang==='en' ? `Saved receiver number: ${a.receiverNum}` : `رقم المستلم المحفوظ: ${a.receiverNum}`)
+    : (lang==='en' ? 'Receiver number not entered yet.' : 'لم يتم إدخال رقم المستلم بعد.');
+
+  document.getElementById('dailyLinkInput').value = a.dailyLocLink || '';
+
+  let locMsg;
+  if(a.dailyLocLink){
+    locMsg = lang==='en' ? 'Using the pasted link.' : 'يتم استخدام الرابط الملصق.';
+  } else if(a.dailyLat != null){
+    locMsg = lang==='en' ? `Location saved: ${a.dailyPlace || ''}` : `الموقع محفوظ: ${a.dailyPlace || ''}`;
+  } else {
+    locMsg = lang==='en' ? 'Location not captured yet.' : 'لم يتم تحديد الموقع بعد.';
+  }
+  document.getElementById('dailyLocStatus').textContent = locMsg;
+
+  renderDailyText();
+}
+
+function mapsLink(lat, lon){
+  return `https://maps.google.com/?q=${lat},${lon}`;
+}
+
+function renderDailyText(){
+  const a = state.article;
+  const panel = document.getElementById('dailyOutPanel');
+  if(!a.receiverNum){ panel.style.display = 'none'; return; }
+  panel.style.display = 'block';
+
+  const today = formatDateEN(new Date());
+  // a pasted link wins over the auto-captured coordinates
+  const loc = a.dailyLocLink
+    ? a.dailyLocLink
+    : (a.dailyLat != null ? mapsLink(a.dailyLat, a.dailyLon) : 'لم يتم تحديد الموقع');
+
+  document.getElementById('dailyText').value =
+`رقم امر العمل : ${a.workOrder || ''}
+التاريخ : ${today}
+اسم المستلم : ${a.receiver || ''}
+رقم المستلم : ${a.receiverNum}
+اسم المهندس : ${a.executor || ''}
+نوع العمل : ${a.workType || ''}
+الموقع : ${loc}`;
+}
+
+document.getElementById('saveRecvNumBtn').addEventListener('click', ()=>{
+  const raw = document.getElementById('recvNumInput').value;
+  const num = raw.replace(/\D/g, '');          // digits only
+  state.article.receiverNum = num;
+  document.getElementById('recvNumInput').value = num;
+  autosave();
+  renderDaily();
+  toast(num ? (lang==='en' ? 'Receiver number saved' : 'تم حفظ رقم المستلم')
+            : (lang==='en' ? 'Receiver number cleared' : 'تم مسح رقم المستلم'));
+});
+// keep the field digits-only while typing
+document.getElementById('recvNumInput').addEventListener('input', (e)=>{
+  const clean = e.target.value.replace(/\D/g, '');
+  if(e.target.value !== clean) e.target.value = clean;
+});
+
+document.getElementById('dailyLocBtn').addEventListener('click', ()=>{
+  if(!navigator.geolocation){
+    toast(lang==='en' ? 'Location not supported' : 'تحديد الموقع غير مدعوم');
+    return;
+  }
+  document.getElementById('dailyLocStatus').textContent =
+    lang==='en' ? 'Getting location…' : 'جاري تحديد الموقع...';
+  navigator.geolocation.getCurrentPosition(async (pos)=>{
+    state.article.dailyLat = pos.coords.latitude;
+    state.article.dailyLon = pos.coords.longitude;
+    // best-effort district/city name; the link works regardless
+    try{
+      const r = await fetch(`https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${pos.coords.latitude}&lon=${pos.coords.longitude}&accept-language=ar&zoom=16`);
+      const j = await r.json();
+      const ad = j.address || {};
+      const district = ad.suburb || ad.neighbourhood || ad.quarter || ad.city_district || '';
+      const city = ad.city || ad.town || ad.municipality || ad.county || '';
+      state.article.dailyPlace = [district, city].filter(Boolean).join('، ');
+    }catch(e){ state.article.dailyPlace = ''; }
+    autosave();
+    renderDaily();
+    toast(lang==='en' ? 'Location captured' : 'تم تحديد الموقع');
+  }, ()=>{
+    document.getElementById('dailyLocStatus').textContent =
+      lang==='en' ? 'Could not get location — allow location access.' : 'تعذّر تحديد الموقع — فعّل إذن الموقع.';
+  }, {enableHighAccuracy:true, timeout:10000});
+});
+
+document.getElementById('saveDailyLinkBtn').addEventListener('click', ()=>{
+  const raw = document.getElementById('dailyLinkInput').value.trim();
+  if(raw && !/^https?:\/\//i.test(raw)){
+    toast(lang==='en' ? 'Link must start with http:// or https://' : 'الرابط لازم يبدأ بـ http:// أو https://');
+    return;
+  }
+  state.article.dailyLocLink = raw;
+  autosave();
+  renderDaily();
+  toast(raw ? (lang==='en' ? 'Link saved' : 'تم حفظ الرابط')
+            : (lang==='en' ? 'Link cleared' : 'تم مسح الرابط'));
+});
+
+// one-tap paste from the clipboard (falls back to manual typing)
+document.getElementById('pasteDailyLinkBtn').addEventListener('click', async ()=>{
+  try{
+    const txt = await navigator.clipboard.readText();
+    if(!txt){ toast(lang==='en' ? 'Clipboard is empty' : 'الحافظة فاضية'); return; }
+    document.getElementById('dailyLinkInput').value = txt.trim();
+    document.getElementById('saveDailyLinkBtn').click();
+  }catch(e){
+    toast(lang==='en' ? 'Paste into the box manually' : 'الصق الرابط في الخانة يدويًا');
+    document.getElementById('dailyLinkInput').focus();
+  }
+});
+
+document.getElementById('copyDailyBtn').addEventListener('click', ()=>{
+  navigator.clipboard.writeText(document.getElementById('dailyText').value);
+  toast(lang==='en' ? 'Copied' : 'تم النسخ');
+});
+document.getElementById('dailyText').addEventListener('input', ()=> autosave());
 
 // ---------- Follow-up tracking (متابعة الملاحظات) ----------
 function renderFollowup(){
