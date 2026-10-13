@@ -1449,7 +1449,9 @@ function renderDailyText(){
   if(!a.receiverNum){ panel.style.display = 'none'; return; }
   panel.style.display = 'block';
 
-  const today = formatDateEN(new Date());
+  const now = new Date();
+  const today = formatDateEN(now);
+  const timeNow = formatTime24(now);
   // a pasted link wins over the auto-captured coordinates
   const loc = a.dailyLocLink
     ? a.dailyLocLink
@@ -1458,6 +1460,7 @@ function renderDailyText(){
   document.getElementById('dailyText').value =
 `رقم امر العمل : ${a.workOrder || ''}
 التاريخ : ${today}
+الوقت : ${timeNow}
 اسم المستلم : ${a.receiver || ''}
 رقم المستلم : ${a.receiverNum}
 اسم المهندس : ${a.executor || ''}
