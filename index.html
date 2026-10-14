@@ -282,7 +282,6 @@
       <input id="chatInput" type="text" placeholder="اكتب ردك هنا...">
       <button class="btn small" id="chatSend" data-i18n="b_send">إرسال</button>
     </div>
-    <button class="btn secondary" style="margin-top:12px;" id="chatRestart" data-i18n="b_restart">إعادة تعبئة المقال من البداية</button>
   </div>
 
   <div class="panel" id="notesPanel">
@@ -319,6 +318,14 @@
     <div class="sub" style="color:var(--ink-dim); font-size:12px; margin-bottom:8px;">تقدر تعدّل النص يدويًا قبل النسخ.</div>
     <textarea id="articleText" class="mono" style="width:100%; min-height:340px; white-space:pre-wrap; font-size:12.5px; background:var(--asphalt); padding:12px; border-radius:8px; border:1px solid var(--line); color:var(--ink); resize:vertical;"></textarea>
     <button class="btn secondary" style="margin-top:10px;" id="copyArticle" data-i18n="b_copy">نسخ نص المقال</button>
+  </div>
+
+  <div class="panel">
+    <h2 data-i18n="h_restart">إعادة التعبئة</h2>
+    <div class="sub" style="color:var(--ink-dim); font-size:12px; margin-bottom:10px;" data-i18n="restart_hint">
+      يمسح بيانات المقال والملاحظات لهذه الزيارة ويبدأ التعبئة من جديد. الصور لا تتأثر.
+    </div>
+    <button class="btn danger" id="chatRestart" data-i18n="b_restart">إعادة تعبئة المقال من البداية</button>
   </div>
 </section>
 
@@ -683,7 +690,9 @@ const I18N = {
   b_x_follow: "Download notes follow-up file (all visits)",
   b_purge:    "Clear photos of old visits",
   b_clear:    "Delete all saved visits",
-  b_restart:  "Start the report over",
+  b_restart:   "Start the report over",
+  h_restart:   "Start over",
+  restart_hint:"Clears the report fields and notes for this visit and starts fresh. Photos are not affected.",
   b_send:     "Send"
 };
 
@@ -1410,7 +1419,14 @@ ${countsBlock}`;
   document.getElementById('articlePreviewPanel').style.display='block';
 }
 document.getElementById('articleText').addEventListener('input', ()=> autosave());
-document.getElementById('chatRestart').addEventListener('click', ()=>{ resetChatFresh(); autosave(); });
+document.getElementById('chatRestart').addEventListener('click', ()=>{
+  const msg = lang==='en'
+    ? 'Clear the report and notes for this visit and start over? Photos are not affected.'
+    : 'مسح بيانات المقال والملاحظات لهذه الزيارة والبدء من جديد؟ الصور لا تتأثر.';
+  if(!confirm(msg)) return;
+  resetChatFresh();
+  autosave();
+});
 document.getElementById('copyArticle').addEventListener('click', ()=>{
   navigator.clipboard.writeText(document.getElementById('articleText').value);
   toast('تم نسخ نص المقال');
